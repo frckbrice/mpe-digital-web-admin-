@@ -49,6 +49,9 @@ export function useLogin() {
     },
     onError: (e) => {
       authError('useLogin: error', e);
+
+      // toast.error(getSafeErrorMessage(e, 'Login failed').message);
+
       toast.error(e.message);
     },
   });
