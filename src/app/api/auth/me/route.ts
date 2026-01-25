@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMpeWebAppBaseUrl } from '@/lib/mpe-web-url';
 import { adminAuth } from '@/lib/firebase/firebase-admin';
-import { getSafeErrorMessage } from '@/lib/utils/error-sanitizer';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +22,7 @@ export async function GET(req: NextRequest) {
     try {
       await adminAuth.verifyIdToken(token);
     } catch (verifyError: unknown) {
-      const { message } = getSafeErrorMessage(verifyError, 'Invalid or expired token');
+      const message = verifyError instanceof Error ? verifyError.message : 'Invalid or expired token';
       return NextResponse.json({ success: false, message }, { status: 401 });
     }
   }
