@@ -84,14 +84,14 @@ export function getSafeErrorMessage(
 
 /**
  * Extracts a user-visible error message from API JSON responses.
- * Uses message, error, and detail so real server messages surface in toasts/console.
+ * Uses message, msg, error, and detail so real server messages surface in toasts.
  */
 export function getApiErrorPayload(
   obj: Record<string, unknown> | null | undefined,
   fallback: string
 ): string {
   if (!obj || typeof obj !== 'object') return fallback;
-  const m = obj.message;
+  const m = obj.message ?? obj.msg;
   const e = obj.error;
   const d = obj.detail;
   if (typeof m === 'string' && m.trim()) return m;

@@ -34,9 +34,12 @@ export function useLogin() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
-      if (!res.ok) throw new Error(getApiErrorPayload(json, 'Failed to get user'));
+      // if (!res.ok) throw new Error(getApiErrorPayload(json, 'Failed to get user'));
+
+      if (!res.ok) throw new Error((json as { message?: string })?.message || 'Failed to get user');
+
       const { user } = json;
-      authLog('useLogin: /api/auth/me', { userId: user?.id, role: user?.role });
+      console.log('useLogin: /api/auth/me', { userId: user?.id, role: user?.role });
       if (!user || user.role !== 'ADMIN') throw new Error('Access denied. Admin only.');
       return { user, accessToken: token, refreshToken: token };
     },
@@ -52,6 +55,7 @@ export function useLogin() {
 
       // toast.error(getSafeErrorMessage(e, 'Login failed').message);
 
+      console.log('useLogin: error', e);
       toast.error(e.message);
     },
   });
@@ -88,7 +92,7 @@ export function useGoogleLogin() {
       const json = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
       if (!res.ok) throw new Error(getApiErrorPayload(json, 'Google sign-in failed'));
       const { user } = json;
-      authLog('useGoogleLogin: /api/auth/google', { userId: user?.id, role: user?.role });
+      console.log('useGoogleLogin: /api/auth/google', { userId: user?.id, role: user?.role });
       if (user?.role !== 'ADMIN') throw new Error('Access denied. Admin only.');
       return { user, accessToken: token, refreshToken: token };
     },
@@ -101,6 +105,10 @@ export function useGoogleLogin() {
     },
     onError: (e) => {
       authError('useGoogleLogin: error', e);
+
+      // toast.error(getSafeErrorMessage(e, 'Google login failed').message);
+
+      console.log('useGoogleLogin: error', e);
       toast.error(e.message);
     },
   });
