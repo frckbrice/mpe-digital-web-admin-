@@ -34,9 +34,7 @@ export function useLogin() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
-      // if (!res.ok) throw new Error(getApiErrorPayload(json, 'Failed to get user'));
-
-      if (!res.ok) throw new Error(json?.message as string);
+      if (!res.ok) throw new Error(getApiErrorPayload(json, ''));
 
       const { user } = json;
       console.log('useLogin: /api/auth/me', { userId: user?.id, role: user?.role });
@@ -52,11 +50,8 @@ export function useLogin() {
     },
     onError: (e) => {
       authError('useLogin: error', e);
-
-      // toast.error(getSafeErrorMessage(e, 'Login failed').message);
-
-      console.log('useLogin: error', e);
-      toast.error(e.message);
+      const msg = e instanceof Error ? e.message : (e != null && typeof e === 'object' && 'message' in e && typeof (e as { message?: unknown }).message === 'string' ? (e as { message: string }).message : String(e ?? ''));
+      toast.error(msg);
     },
   });
 }
