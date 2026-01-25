@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import {
   flexRender,
   getCoreRowModel,
@@ -50,6 +51,7 @@ export function DataTablePagination({
   onPageChange,
   pageSizeOptions = [10, 20, 50, 100],
 }: DataTablePaginationProps) {
+  const { t } = useTranslation();
   const start = totalCount === 0 ? 0 : pageIndex * pageSize + 1;
   const end = Math.min((pageIndex + 1) * pageSize, totalCount);
 
@@ -60,7 +62,7 @@ export function DataTablePagination({
           {start}–{end} of {totalCount}
         </span>
         <div className="flex items-center gap-2">
-          <span>Rows per page</span>
+          <span>{t('common.rowsPerPage')}</span>
           <Select
             value={String(pageSize)}
             onValueChange={(v) => {
@@ -82,7 +84,7 @@ export function DataTablePagination({
       </div>
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">
-          Page {pageCount ? pageIndex + 1 : 0} of {pageCount || 1}
+          {t('common.pageOf', { current: pageCount ? pageIndex + 1 : 0, total: pageCount || 1 })}
         </span>
         <Button
           variant="outline"
@@ -90,7 +92,7 @@ export function DataTablePagination({
           className="h-8 w-8 p-0"
           onClick={() => onPageChange((prev) => ({ ...prev, pageIndex: prev.pageIndex - 1 }))}
           disabled={!canPreviousPage}
-          aria-label="Previous page"
+          aria-label={t('common.previousPage')}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -100,7 +102,7 @@ export function DataTablePagination({
           className="h-8 w-8 p-0"
           onClick={() => onPageChange((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 }))}
           disabled={!canNextPage}
-          aria-label="Next page"
+          aria-label={t('common.nextPage')}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -130,9 +132,10 @@ export function DataTable<TData>({
   onPaginationChange,
   totalCount,
   isLoading = false,
-  emptyMessage = 'No results.',
+  emptyMessage,
   pageSizeOptions,
 }: DataTableProps<TData>) {
+  const { t } = useTranslation();
   const table = useReactTable({
     data,
     columns,
@@ -184,7 +187,7 @@ export function DataTable<TData>({
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                {emptyMessage}
+                {emptyMessage ?? t('common.noResults')}
               </TableCell>
             </TableRow>
           )}

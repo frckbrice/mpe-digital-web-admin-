@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { I18nProvider } from '@/providers/I18nProvider';
 import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
@@ -16,14 +17,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
         <QueryProvider>
           <ThemeProvider>
-            <AuthProvider>
-              {children}
-              <Toaster richColors position="top-center" />
-            </AuthProvider>
+            <I18nProvider>
+              <AuthProvider>
+                {children}
+                <Toaster richColors position="top-center" />
+              </AuthProvider>
+            </I18nProvider>
           </ThemeProvider>
         </QueryProvider>
       </body>
