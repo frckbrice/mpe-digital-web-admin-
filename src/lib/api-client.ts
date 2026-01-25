@@ -9,6 +9,7 @@ export { getMpeWebAppBaseUrl } from './mpe-web-url';
 
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const base = getMpeWebAppBaseUrl();
+  console.log('apiFetch: base', base);
   if (!base) {
     throw new Error(
       'API base URL is not set. In development set NEXT_PUBLIC_LOCAL_APP_URL (e.g. http://localhost:3000). ' +

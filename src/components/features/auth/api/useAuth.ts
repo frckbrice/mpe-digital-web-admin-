@@ -36,7 +36,7 @@ export function useLogin() {
       const json = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
       // if (!res.ok) throw new Error(getApiErrorPayload(json, 'Failed to get user'));
 
-      if (!res.ok) throw new Error((json as { message?: string })?.message || 'Failed to get user');
+      if (!res.ok) throw new Error(json?.message as string);
 
       const { user } = json;
       console.log('useLogin: /api/auth/me', { userId: user?.id, role: user?.role });
