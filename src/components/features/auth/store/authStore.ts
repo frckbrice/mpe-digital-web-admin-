@@ -88,7 +88,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       authLog('syncAuthState: fetching /api/auth/me');
       const { apiFetch } = await import('@/lib/api-client');
-      const res = await apiFetch('/api/auth/me');
+      // Pass token explicitly: if auth is null or getValidIdToken fails in apiFetch, we still send a valid request.
+      const res = await apiFetch('/api/auth/me', token ? { headers: { Authorization: `Bearer ${token}` } } : {});
       const data = await res.json().catch(() => ({})) as { user?: User; message?: string };
       if (!res.ok) throw new Error(data?.message || 'Failed to get user');
       const { user } = data;
