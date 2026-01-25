@@ -11,7 +11,7 @@ import { ensureFirebaseInitialized } from '@/lib/firebase/firebase-client';
 import { useAuthStore, type User } from '../store/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { getSafeErrorMessage } from '@/lib/utils/error-sanitizer';
+import { getApiErrorPayload } from '@/lib/utils/error-sanitizer';
 import { authLog, authError, authWarn } from '@/lib/utils/auth-logger';
 
 export function useLogin() {
@@ -33,8 +33,8 @@ export function useLogin() {
       const res = await apiFetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const json = await res.json().catch(() => ({})) as { user?: User; message?: string };
-      if (!res.ok) throw new Error(json?.message || 'Failed to get user');
+      const json = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
+      if (!res.ok) throw new Error(getApiErrorPayload(json, 'Failed to get user'));
       const { user } = json;
       authLog('useLogin: /api/auth/me', { userId: user?.id, role: user?.role });
       if (!user || user.role !== 'ADMIN') throw new Error('Access denied. Admin only.');
@@ -49,7 +49,7 @@ export function useLogin() {
     },
     onError: (e) => {
       authError('useLogin: error', e);
-      toast.error(getSafeErrorMessage(e, 'Login failed').message);
+      toast.error(e.message);
     },
   });
 }
@@ -82,8 +82,9 @@ export function useGoogleLogin() {
           photoURL: cred.user.photoURL,
         }),
       });
-      if (!res.ok) throw new Error('Google sign-in failed');
-      const { user } = await res.json();
+      const json = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
+      if (!res.ok) throw new Error(getApiErrorPayload(json, 'Google sign-in failed'));
+      const { user } = json;
       authLog('useGoogleLogin: /api/auth/google', { userId: user?.id, role: user?.role });
       if (user?.role !== 'ADMIN') throw new Error('Access denied. Admin only.');
       return { user, accessToken: token, refreshToken: token };
@@ -97,7 +98,7 @@ export function useGoogleLogin() {
     },
     onError: (e) => {
       authError('useGoogleLogin: error', e);
-      toast.error(getSafeErrorMessage(e, 'Google login failed').message);
+      toast.error(e.message);
     },
   });
 }

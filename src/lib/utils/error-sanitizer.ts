@@ -81,3 +81,21 @@ export function getSafeErrorMessage(
   const message = isFirebase ? sanitizeFirebaseError(error) : sanitizeError(error, defaultMessage);
   return { message };
 }
+
+/**
+ * Extracts a user-visible error message from API JSON responses.
+ * Uses message, error, and detail so real server messages surface in toasts/console.
+ */
+export function getApiErrorPayload(
+  obj: Record<string, unknown> | null | undefined,
+  fallback: string
+): string {
+  if (!obj || typeof obj !== 'object') return fallback;
+  const m = obj.message;
+  const e = obj.error;
+  const d = obj.detail;
+  if (typeof m === 'string' && m.trim()) return m;
+  if (typeof e === 'string' && e.trim()) return typeof d === 'string' && d.trim() ? `${e}: ${d}` : e;
+  if (typeof d === 'string' && d.trim()) return d;
+  return fallback;
+}
