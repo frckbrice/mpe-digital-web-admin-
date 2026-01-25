@@ -15,9 +15,12 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       'In production set NEXT_PUBLIC_APP_URL. Ensure the MPE Web app is running at that URL.'
     );
   }
-  // In the browser, /api/auth/* and /api/admin/* go through same-origin proxy to avoid CORS and "Failed to fetch" when MPE Web runs on another port.
+  // In the browser, /api/auth/*, /api/admin/*, /api/agent/*, /api/documents/*, /api/messages/*, /api/quote-requests/*, /api/notifications/* go through same-origin proxy to avoid CORS.
   const p = path.startsWith('/') ? path : '/' + path;
-  const useProxy = typeof window !== 'undefined' && (/^\/api\/auth\/(me|logout|google|profile)$/.test(p) || p.startsWith('/api/admin/'));
+  const useProxy =
+    typeof window !== 'undefined' &&
+    (/^\/api\/auth\/(me|logout|google|profile)$/.test(p) ||
+      /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p));
   const url = useProxy ? p : `${base}${p}`;
 
   const isAuthPath = path.includes('/auth');
@@ -33,7 +36,11 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     if (isAuthPath) authLog('apiFetch: no currentUser, request without Authorization', { path });
   }
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {};
+  // Do not set Content-Type for FormData; browser sets multipart/form-data with boundary.
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
   if (options.headers) {
     if (options.headers instanceof Headers) {
       options.headers.forEach((v, k) => { headers[k] = v; });

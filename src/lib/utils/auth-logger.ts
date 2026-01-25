@@ -1,6 +1,6 @@
 /**
  * Auth logger – use [Auth] prefix so logs can be filtered in DevTools.
- * Flow logs (authLog) only in development; warnings and errors always.
+ * All logs (authLog, authWarn, authError) run only in development.
  */
 
 const isDev =
@@ -17,9 +17,13 @@ export function authLog(message: string, data?: Record<string, unknown>): void {
 }
 
 export function authWarn(message: string, err?: unknown): void {
-  console.warn('[Auth]', message, err ?? '');
+  if (isDev) {
+    console.warn('[Auth]', message, err ?? '');
+  }
 }
 
 export function authError(message: string, err?: unknown): void {
-  console.error('[Auth]', message, err ?? '');
+  if (isDev) {
+    console.error('[Auth]', message, err ?? '');
+  }
 }

@@ -28,7 +28,11 @@ export function useLogin() {
       const token = await cred.user.getIdToken();
       const { apiFetch } = await import('@/lib/api-client');
       authLog('useLogin: calling /api/auth/me');
-      const res = await apiFetch('/api/auth/me');
+      // Pass token explicitly: auth.currentUser can lag briefly after sign-in, so getValidIdToken
+      // may be null in apiFetch. Sending the token we just got avoids that race in production.
+      const res = await apiFetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const json = await res.json().catch(() => ({})) as { user?: User; message?: string };
       if (!res.ok) throw new Error(json?.message || 'Failed to get user');
       const { user } = json;
@@ -67,9 +71,10 @@ export function useGoogleLogin() {
       const token = await cred.user.getIdToken();
       const { apiFetch } = await import('@/lib/api-client');
       authLog('useGoogleLogin: calling /api/auth/google');
+      // Pass token in Authorization and in body so MPE Web can verify even if auth.currentUser lags.
       const res = await apiFetch('/api/auth/google', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           idToken: token,
           email: cred.user.email,
