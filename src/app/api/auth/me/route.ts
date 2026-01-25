@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         error: 'MPE_WEB_UNREACHABLE',
-        message: `Cannot reach the MPE Web app at ${base}. Is it running? In development, start it (e.g. pnpm dev on port 3000).`,
+        message: `Cannot reach the MPE Web app at ${base}. Is it running? from /api/auth/me.` + msg,
         detail: msg,
       },
       { status: 503 }

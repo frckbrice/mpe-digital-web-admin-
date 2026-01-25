@@ -16,12 +16,13 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       'In production set NEXT_PUBLIC_APP_URL. Ensure the MPE Web app is running at that URL.'
     );
   }
-  // In the browser, /api/admin/*, /api/agent/*, /api/documents/*, /api/messages/*, /api/quote-requests/*, /api/notifications/* go through same-origin proxy to avoid CORS.
-  // /api/auth/me, /api/auth/logout, /api/auth/google, /api/auth/profile are called directly against the base URL (MPE Web app).
+  // In the browser, /api/auth/*, /api/admin/*, ... go through same-origin proxy to avoid CORS.
+  // (Direct calls to MPE Web trigger OPTIONS preflight; if MPE Web returns 401 on OPTIONS, the request is blocked.)
   const p = path.startsWith('/') ? path : '/' + path;
   const useProxy =
     typeof window !== 'undefined' &&
-    /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p);
+    (/^\/api\/auth\/(me|logout|google|profile)$/.test(p) ||
+      /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p));
   const url = useProxy ? p : `${base}${p}`;
 
   const isAuthPath = path.includes('/auth');
@@ -29,8 +30,10 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (auth?.currentUser) {
     try {
       token = await getValidIdToken(false);
+      console.log('apiFetch: token', token);
       if (isAuthPath) authLog('apiFetch: token', { path, hasToken: !!token });
     } catch (e) {
+      console.log('apiFetch: failed to get auth token', e);
       authError('apiFetch: failed to get auth token', e);
     }
   } else {
@@ -53,12 +56,16 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   }
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
+  console.log('apiFetch: url', url);
+  console.log('apiFetch: headers', headers);
+
   try {
     return await fetch(url, { ...options, headers });
   } catch (e) {
+    console.log('apiFetch: failed to fetch', e);
     if (e instanceof TypeError && e.message === 'Failed to fetch') {
       throw new Error(
-        `Cannot reach the MPE Web app at ${base}. Is it running? In development, start the MPE Web app (e.g. pnpm dev on port 3000).`
+        `Cannot reach the MPE Web app at ${base}. Is it running? from apiFetch.` + e.message
       );
     }
     throw e;
