@@ -11,7 +11,7 @@ import { ensureFirebaseInitialized } from '@/lib/firebase/firebase-client';
 import { useAuthStore, type User } from '../store/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { getApiErrorPayload } from '@/lib/utils/error-sanitizer';
+import { getApiErrorPayload, getSafeErrorMessage } from '@/lib/utils/error-sanitizer';
 import { authLog, authError, authWarn } from '@/lib/utils/auth-logger';
 
 export function useLogin() {
@@ -106,10 +106,7 @@ export function useGoogleLogin() {
     onError: (e) => {
       authError('useGoogleLogin: error', e);
 
-      // toast.error(getSafeErrorMessage(e, 'Google login failed').message);
-
-      console.log('useGoogleLogin: error', e);
-      toast.error(e.message);
+      toast.error(getSafeErrorMessage(e, 'Google login failed').message);
     },
   });
 }
