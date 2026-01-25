@@ -93,7 +93,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Pass token explicitly: if auth is null or getValidIdToken fails in apiFetch, we still send a valid request.
       const res = await apiFetch('/api/auth/me', token ? { headers: { Authorization: `Bearer ${token}` } } : {});
       const data = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
-      if (!res.ok) throw new Error(getApiErrorPayload(data, 'Failed to get user'));
+      if (!res.ok) throw new Error(data?.message as string);
       const { user } = data;
       authLog('syncAuthState: /api/auth/me response', { userId: user?.id, role: user?.role, isActive: user?.isActive });
 
@@ -127,7 +127,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         localStorage.setItem('authTimestamp', Date.now().toString());
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to get user';
+      const msg = e instanceof Error ? e.message : 'Failed to sync auth state';
       const isNetworkError =
         e instanceof TypeError && /fetch|network|failed to fetch/i.test(String((e as Error).message));
       if (isNetworkError) {
