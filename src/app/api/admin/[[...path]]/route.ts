@@ -3,11 +3,12 @@ import { getMpeWebAppBaseUrl } from '@/lib/mpe-web-url';
 
 export const dynamic = 'force-dynamic';
 
-function buildProxyUrl(path: string[] | undefined): string {
+function buildProxyUrl(path: string[] | undefined, search?: string): string {
   const base = getMpeWebAppBaseUrl();
   if (!base) return '';
   const segment = path && path.length > 0 ? path.join('/') : '';
-  return `${base}/api/admin${segment ? `/${segment}` : ''}`;
+  const pathPart = `${base}/api/admin${segment ? `/${segment}` : ''}`;
+  return search && search.startsWith('?') ? `${pathPart}${search}` : pathPart;
 }
 
 async function proxy(
@@ -24,7 +25,8 @@ async function proxy(
     );
   }
 
-  const url = buildProxyUrl(path);
+  const search = req.nextUrl.search;
+  const url = buildProxyUrl(path, search);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
