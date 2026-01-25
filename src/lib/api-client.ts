@@ -9,18 +9,19 @@ export { getMpeWebAppBaseUrl } from './mpe-web-url';
 
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const base = getMpeWebAppBaseUrl();
+  console.log('apiFetch: base', base);
   if (!base) {
     throw new Error(
       'API base URL is not set. In development set NEXT_PUBLIC_LOCAL_APP_URL (e.g. http://localhost:3000). ' +
       'In production set NEXT_PUBLIC_APP_URL. Ensure the MPE Web app is running at that URL.'
     );
   }
-  // In the browser, /api/auth/*, /api/admin/*, /api/agent/*, /api/documents/*, /api/messages/*, /api/quote-requests/*, /api/notifications/* go through same-origin proxy to avoid CORS.
+  // In the browser, /api/admin/*, /api/agent/*, /api/documents/*, /api/messages/*, /api/quote-requests/*, /api/notifications/* go through same-origin proxy to avoid CORS.
+  // /api/auth/me, /api/auth/logout, /api/auth/google, /api/auth/profile are called directly against the base URL (MPE Web app).
   const p = path.startsWith('/') ? path : '/' + path;
   const useProxy =
     typeof window !== 'undefined' &&
-    (/^\/api\/auth\/(me|logout|google|profile)$/.test(p) ||
-      /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p));
+    /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p);
   const url = useProxy ? p : `${base}${p}`;
 
   const isAuthPath = path.includes('/auth');

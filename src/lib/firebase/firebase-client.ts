@@ -32,10 +32,12 @@ const initializeFirebaseClient = () => {
   if (!process.env.NEXT_PUBLIC_FIREBASE_APP_ID?.trim()) missingVars.push('NEXT_PUBLIC_FIREBASE_APP_ID');
 
   if (missingVars.length > 0) {
-    initializationError = new Error(`Missing Firebase env: ${missingVars.join(', ')}`);
+    const msg =
+      'Firebase cannot start: NEXT_PUBLIC_FIREBASE_* variables are missing or empty. ' +
+      'In production, set them in your hosting build environment (e.g. Vercel Project Settings > Environment Variables) and redeploy.';
     isInitializing = false;
     authError('Firebase: missing env', missingVars);
-    throw new Error('Firebase configuration error. Check your .env file.');
+    throw new Error(msg);
   }
 
   try {
@@ -47,6 +49,8 @@ const initializeFirebaseClient = () => {
       messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
       appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
     };
+
+    authLog('Firebase: initializing app', { config: firebaseConfig });
     try {
       app = getApp();
     } catch {
@@ -70,6 +74,7 @@ if (typeof window !== 'undefined') {
   try {
     initializeFirebaseClient();
   } catch (e) {
+    initializationError = e instanceof Error ? e : new Error(String(e));
     authError('Firebase init on load', e);
   }
 }

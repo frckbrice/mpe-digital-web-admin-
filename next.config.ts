@@ -9,9 +9,9 @@ const nextConfig: NextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
   },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
+  // compiler: {
+  //   removeConsole: process.env.NODE_ENV === 'production',
+  // },
   poweredByHeader: false,
   typescript: { ignoreBuildErrors: false },
   eslint: { ignoreDuringBuilds: true },

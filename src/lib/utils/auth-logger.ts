@@ -23,7 +23,11 @@ export function authWarn(message: string, err?: unknown): void {
 }
 
 export function authError(message: string, err?: unknown): void {
+  const payload = err instanceof Error ? err.message : (err != null ? String(err) : '');
   if (isDev) {
     console.error('[Auth]', message, err ?? '');
+  } else if (payload) {
+    // In production, log the error message to the console so it can be inspected in browser DevTools
+    console.error('[Auth]', message, payload);
   }
 }

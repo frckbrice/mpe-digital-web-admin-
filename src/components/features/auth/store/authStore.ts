@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { authLog, authError, authWarn } from '@/lib/utils/auth-logger';
+import { getApiErrorPayload } from '@/lib/utils/error-sanitizer';
 
 export interface User {
   id: string;
@@ -88,9 +90,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       authLog('syncAuthState: fetching /api/auth/me');
       const { apiFetch } = await import('@/lib/api-client');
-      const res = await apiFetch('/api/auth/me');
-      const data = await res.json().catch(() => ({})) as { user?: User; message?: string };
-      if (!res.ok) throw new Error(data?.message || 'Failed to get user');
+      // Pass token explicitly: if auth is null or getValidIdToken fails in apiFetch, we still send a valid request.
+      const res = await apiFetch('/api/auth/me', token ? { headers: { Authorization: `Bearer ${token}` } } : {});
+      const data = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
+      if (!res.ok) throw new Error(data?.message as string);
       const { user } = data;
       authLog('syncAuthState: /api/auth/me response', { userId: user?.id, role: user?.role, isActive: user?.isActive });
 
@@ -124,6 +127,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         localStorage.setItem('authTimestamp', Date.now().toString());
       }
     } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to sync auth state';
       const isNetworkError =
         e instanceof TypeError && /fetch|network|failed to fetch/i.test(String((e as Error).message));
       if (isNetworkError) {
@@ -133,6 +137,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         );
       } else {
         authError('syncAuthState failed', e);
+      }
+      if (typeof window !== 'undefined') {
+        toast.error(msg);
       }
       set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false, isLoading: false });
       if (typeof window !== 'undefined') { localStorage.removeItem('userCache'); localStorage.removeItem('authTimestamp'); }

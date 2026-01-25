@@ -20,6 +20,8 @@ Admin dashboard for [MPE Web app](../MPE%20Web%20app/). Authenticates with the s
 
    The app uses `NEXT_PUBLIC_LOCAL_APP_URL` in development (`pnpm dev`) and `NEXT_PUBLIC_APP_URL` in production builds.
 
+   **Production:** `NEXT_PUBLIC_*` are inlined at **build time**. On Vercel (or similar), add `NEXT_PUBLIC_FIREBASE_*`, `NEXT_PUBLIC_APP_URL`, and `NEXT_PUBLIC_LOCAL_APP_URL` in Project Settings > Environment Variables and ensure they are available for the **Build** (not only Runtime). Otherwise Firebase will not initialize in the client and you may see "Failed to get user" on login.
+
 2. **CORS on MPE Web app**
 
    So this app can call the MPE Web app API from the browser, set in the MPE Web app `.env`:
