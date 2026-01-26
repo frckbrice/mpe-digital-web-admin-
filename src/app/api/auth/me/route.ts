@@ -12,10 +12,19 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { success: false, message: 'Authorization header missing or invalid. Expected: Bearer <token>.', code: 'AUTH_HEADER_MISSING' },
+      { status: 401 }
+    );
   }
 
-  const token = authHeader.substring(7);
+  const token = authHeader.substring(7).trim();
+  if (!token) {
+    return NextResponse.json(
+      { success: false, message: 'Token is empty.', code: 'TOKEN_EMPTY' },
+      { status: 401 }
+    );
+  }
 
   // Verify ID token with firebase-admin when available (same as MPE Web app)
   if (adminAuth) {
@@ -23,7 +32,7 @@ export async function GET(req: NextRequest) {
       await adminAuth.verifyIdToken(token);
     } catch (verifyError: unknown) {
       const message = verifyError instanceof Error ? verifyError.message : 'Invalid or expired token';
-      return NextResponse.json({ success: false, message }, { status: 401 });
+      return NextResponse.json({ success: false, message, code: 'TOKEN_INVALID' }, { status: 401 });
     }
   }
 
@@ -39,7 +48,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const res = await fetch(`${base}/api/auth/me`, { headers });
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch((e) => ({}));
     return NextResponse.json(data, { status: res.status });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
