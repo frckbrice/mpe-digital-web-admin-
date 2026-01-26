@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
       console.log('api/auth/me: data', data);
     } else {
       const text = await res.text();
-      console.warn('Non-JSON response from upstream:', text.substring(0, 200));
+      console.warn('Non-JSON response from upstream:', text.substring(0, 500));
       data.message = `Upstream returned non-JSON content.`;
     }
 
