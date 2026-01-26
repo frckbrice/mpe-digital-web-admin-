@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
       { status: 401 }
     );
   }
+  console.log('[Admin /auth/me] Incoming Authorization:', authHeader);
 
   const token = authHeader.substring(7).trim();
   if (!token) {
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
   }
 
   const headers: Record<string, string> = {
-    Authorization: authHeader,
+    Authorization: (token ? `Bearer ${token}` : authHeader), // Pass token explicitly: auth.currentUser can lag briefly after sign-in, so getValidIdToken may be null in apiFetch. Sending the token we just got avoids that race in production.
     'Content-Type': 'application/json',
     'X-Forwarded-From': 'admin-app',
     'X-Admin-Proxy': 'true',
@@ -70,7 +71,7 @@ export async function GET(req: NextRequest) {
       out._upstreamStatus = res.status;
     }
     console.log('api/auth/me: out', out);
-    return NextResponse.json(out, { status: res.status });
+    return NextResponse.json({ ...out, data, headers }, { status: res.status });
   } catch (e: unknown) {
     console.log('api/auth/me: error', e);
     const msg = e instanceof Error ? e.message : 'Unknown error';
