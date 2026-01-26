@@ -91,14 +91,33 @@ export const useAuthStore = create<AuthState>((set) => ({
       authLog('syncAuthState: fetching /api/auth/me');
       const { apiFetch } = await import('@/lib/api-client');
       const { getValidIdToken } = await import('@/lib/utils/token-refresh');
+      // Ensure we have a token: if token is empty but firebaseUser exists, try to get it directly
+      let finalToken = token;
+      if (!finalToken && firebaseUser && typeof firebaseUser === 'object' && 'getIdToken' in firebaseUser) {
+        authLog('syncAuthState: token empty, trying getIdToken from firebaseUser');
+        try {
+          finalToken = await (firebaseUser as { getIdToken: () => Promise<string> }).getIdToken();
+        } catch (e) {
+          authWarn('syncAuthState: getIdToken from firebaseUser failed', e);
+        }
+      }
       // Pass token explicitly: if auth is null or getValidIdToken fails in apiFetch, we still send a valid request.
-      let res = await apiFetch('/api/auth/me', token ? { headers: { Authorization: `Bearer ${token}` } } : {});
+      let res = await apiFetch('/api/auth/me', finalToken ? { headers: { Authorization: `Bearer ${finalToken}` } } : {});
       let data = (await res.json().catch(() => ({}))) as { user?: User; code?: string } & Record<string, unknown>;
       // On 401 with TOKEN_INVALID, retry once with a force-refreshed token (handles expiry race).
       if (res.status === 401 && data?.code === 'TOKEN_INVALID') {
         authLog('syncAuthState: 401 TOKEN_INVALID, retrying with force refresh');
-        const refreshed = await getValidIdToken(true);
+        let refreshed = await getValidIdToken(true);
+        // Fallback: if getValidIdToken fails, try direct getIdToken from firebaseUser
+        if (!refreshed && firebaseUser && typeof firebaseUser === 'object' && 'getIdToken' in firebaseUser) {
+          try {
+            refreshed = await (firebaseUser as { getIdToken: (forceRefresh?: boolean) => Promise<string> }).getIdToken(true);
+          } catch (e) {
+            authWarn('syncAuthState: force getIdToken from firebaseUser failed', e);
+          }
+        }
         if (refreshed) {
+          finalToken = refreshed; // Update finalToken with refreshed value
           res = await apiFetch('/api/auth/me', { headers: { Authorization: `Bearer ${refreshed}` } });
           data = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
         }
@@ -123,10 +142,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       authLog('syncAuthState: synced successfully', { userId: user.id, role: user.role });
+      // Use finalToken if we got it, otherwise fall back to original token
+      const savedToken = finalToken || token;
       set({
         user,
-        accessToken: token,
-        refreshToken: token,
+        accessToken: savedToken,
+        refreshToken: savedToken,
         isAuthenticated: true,
         isLoading: false,
       });
