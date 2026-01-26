@@ -70,11 +70,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   // to avoid overwriting a fresh token with a stale one, especially in production after sign-in.
   if (!headers['Authorization'] && token) headers['Authorization'] = `Bearer ${token}`;
 
-  console.log('apiFetch: url', url);
-  console.log('apiFetch: headers', headers);
-  console.log('apiFetch: options', { ...options, headers });
-
   try {
+    console.log('apiFetch: fetching', url);
     return await fetch(url, { ...options, headers });
   } catch (e) {
     console.log('apiFetch: failed to fetch', e);
