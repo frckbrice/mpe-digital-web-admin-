@@ -16,14 +16,14 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       'In production set NEXT_PUBLIC_APP_URL. Ensure the MPE Web app is running at that URL.'
     );
   }
-  // In the browser, /api/auth/logout|google|profile and /api/admin/*, ... go through same-origin proxy
-  // to avoid CORS. /api/auth/me is excluded: the browser calls MPE Web's /api/auth/me directly so the
-  // server does not proxy it. MPE Web must allow the Admin app's origin in CORS and allow the
-  // Authorization header for /api/auth/me (GET with Bearer token triggers a preflight).
+  // In the browser, /api/auth/* and /api/admin/*, ... go through same-origin proxy to avoid CORS.
+  // /api/auth/me is now proxied too: the Admin app's /api/auth/me route forwards to MPE Web
+  // server-side, avoiding browser CORS and "Failed to fetch" when MPE Web is unreachable or
+  // does not allow the Admin app's origin.
   const p = path.startsWith('/') ? path : '/' + path;
   const useProxy =
     typeof window !== 'undefined' &&
-    (/^\/api\/auth\/(logout|google|profile)$/.test(p) ||
+    (/^\/api\/auth\/(logout|google|profile|me)$/.test(p) ||
       /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p));
   const url = useProxy ? p : `${base}${p}`;
 
@@ -72,7 +72,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     console.log('apiFetch: failed to fetch', e);
     if (e instanceof TypeError && e.message === 'Failed to fetch') {
       throw new Error(
-        `Cannot reach the MPE Web app at ${base}. Is it running? from apiFetch.` + e.message
+        `Cannot reach the MPE Web app at ${base}. Is it running? (apiFetch: ${e.message})`
       );
     }
     throw e;
