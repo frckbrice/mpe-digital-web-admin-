@@ -52,7 +52,6 @@ export async function GET(req: NextRequest) {
     'X-Admin-Proxy': 'true',
   };
 
-  console.log('api/auth/me: headers', headers);
   console.log('api/auth/me: base', base);
   try {
     const res = await fetch(`${base}/api/auth/me`, {
@@ -60,17 +59,16 @@ export async function GET(req: NextRequest) {
     });
     const data = await res.json().catch((e) => {
       console.log('api/auth/me: error', e);
-      return { user: null, message: 'Failed to get user' };
+      return { user: null, message: e instanceof Error ? e.message : 'Failed to get user' };
     });
     console.log('api/auth/me: data', data);
     const out: Record<string, unknown> = { ...data };
-    console.log('api/auth/me: out', out);
-    console.log('api/auth/me: res.status', res.status);
+    console.log('api/auth/me: res', JSON.stringify(res, null, 2));
     if (res.status >= 400) {
       out._fromUpstream = true;
       out._upstreamStatus = res.status;
     }
-    console.log('api/auth/me: out', out);
+    console.log('api/auth/me: out', JSON.stringify(out, null, 2));
     return NextResponse.json({ ...out, data, headers }, { status: res.status });
   } catch (e: unknown) {
     console.log('api/auth/me: error', e);
