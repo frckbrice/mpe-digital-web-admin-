@@ -3,8 +3,6 @@
 
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
-import { readFileSync, existsSync } from 'fs';
-import { resolve } from 'path';
 import { authError } from '../utils/auth-logger';
 import { sanitizeFirebaseError } from '../utils/error-sanitizer';
 
@@ -55,6 +53,8 @@ const initializeFirebaseAdmin = () => {
         `Missing or empty required Firebase environment variable(s): ${missingVars.join(', ')}`
       );
     }
+    // On Vercel: store FIREBASE_PRIVATE_KEY as one line with \n as literal (e.g. "-----BEGIN...\nMIIE...\n-----END...\n").
+    // .replace(/\\n/g, '\n') converts those to real newlines. Real newlines in the env are left as-is.
     initConfig = {
       credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID!,
