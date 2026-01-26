@@ -5,14 +5,14 @@ import { adminAuth } from '@/lib/firebase/firebase-admin';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/auth/me — server-side proxy to MPE Web (verifies ID token, then fetches user from MPE Web).
+ * GET /api/auth/me — same-origin proxy to MPE Web (verifies ID token, fetches user from MPE Web).
  *
- * The login and syncAuthState flows call MPE Web's /api/auth/me directly from the browser
- * (see api-client: /api/auth/me is excluded from the same-origin proxy). This route remains
- * for server-side or legacy callers that hit the Admin app's /api/auth/me.
+ * The browser calls this route (api-client routes /api/auth/me through the proxy). This avoids
+ * CORS and "Failed to fetch" when MPE Web is unreachable or does not allow the Admin app's origin.
  *
- * If Firebase Admin is not configured, only proxies (MPE Web does verification).
+ * If Firebase Admin is configured, we verify the ID token here; otherwise we rely on MPE Web.
  * 401: AUTH_HEADER_MISSING | TOKEN_EMPTY | TOKEN_INVALID (this route) or from MPE Web (_fromUpstream: true).
+ * 503: MPE Web unreachable (NEXT_PUBLIC_APP_URL / NEXT_PUBLIC_LOCAL_APP_URL wrong or MPE Web down).
  */
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
