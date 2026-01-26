@@ -90,10 +90,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       authLog('syncAuthState: fetching /api/auth/me');
       const { apiFetch } = await import('@/lib/api-client');
+      const { getValidIdToken } = await import('@/lib/utils/token-refresh');
       // Pass token explicitly: if auth is null or getValidIdToken fails in apiFetch, we still send a valid request.
-      const res = await apiFetch('/api/auth/me', token ? { headers: { Authorization: `Bearer ${token}` } } : {});
-      const data = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
-      if (!res.ok) throw new Error(data?.message as string);
+      let res = await apiFetch('/api/auth/me', token ? { headers: { Authorization: `Bearer ${token}` } } : {});
+      let data = (await res.json().catch(() => ({}))) as { user?: User; code?: string } & Record<string, unknown>;
+      // On 401 with TOKEN_INVALID, retry once with a force-refreshed token (handles expiry race).
+      if (res.status === 401 && data?.code === 'TOKEN_INVALID') {
+        authLog('syncAuthState: 401 TOKEN_INVALID, retrying with force refresh');
+        const refreshed = await getValidIdToken(true);
+        if (refreshed) {
+          res = await apiFetch('/api/auth/me', { headers: { Authorization: `Bearer ${refreshed}` } });
+          data = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
+        }
+      }
+      if (!res.ok) throw new Error((data?.message as string) || 'Request failed');
       const { user } = data;
       authLog('syncAuthState: /api/auth/me response', { userId: user?.id, role: user?.role, isActive: user?.isActive });
 
