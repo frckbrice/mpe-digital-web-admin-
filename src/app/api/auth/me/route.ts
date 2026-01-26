@@ -23,11 +23,10 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json(
-      { success: false, message: 'Authorization header missing or invalid. Expected: Bearer <token>.', code: 'AUTH_HEADER_MISSING' },
+      { success: false, message: 'Authorization header missing or invalid.', code: 'AUTH_HEADER_MISSING' },
       { status: 401 }
     );
   }
-  console.log('[Admin /auth/me] Incoming Authorization:', authHeader);
 
   const token = authHeader.substring(7).trim();
   if (!token) {
@@ -40,49 +39,43 @@ export async function GET(req: NextRequest) {
   const base = getMpeWebAppBaseUrl();
   if (!base) {
     return NextResponse.json(
-      { error: 'API base URL not set. In production set NEXT_PUBLIC_APP_URL (MPE Web URL). In dev set NEXT_PUBLIC_LOCAL_APP_URL.' },
+      { error: 'API base URL not set.', status: 500 },
       { status: 500 }
     );
   }
 
   const headers: Record<string, string> = {
-    Authorization: (token ? `Bearer ${token}` : authHeader), // Pass token explicitly: auth.currentUser can lag briefly after sign-in, so getValidIdToken may be null in apiFetch. Sending the token we just got avoids that race in production.
+    Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
     'X-Forwarded-From': 'admin-app',
     'X-Admin-Proxy': 'true',
   };
 
-  console.log('api/auth/me: base', base);
   try {
-    const res = await fetch(`${base}/api/auth/me`, {
-      headers,
-    });
-    if (!res.ok) {
-      const text = await res.text(); // don't parse as JSON yet
-      console.error('Response not OK:', res, text);
-      return;
+    const res = await fetch(`${base}/api/auth/me`, { headers });
+    let data: Record<string, unknown> = {};
+    const contentType = res.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      data = await res.json();
+      console.log('api/auth/me: data', data);
+    } else {
+      const text = await res.text();
+      console.warn('Non-JSON response from upstream:', text.substring(0, 200));
+      data.message = `Upstream returned non-JSON content.`;
     }
-    const data = await res.json().catch((e) => {
-      console.log('api/auth/me: error', e);
-    });
-    console.log('api/auth/me: user data', data);
+
     const out: Record<string, unknown> = { ...data };
-    console.log('api/auth/me: res', res);
-    if (res.status >= 400) {
+    if (!res.ok) {
       out._fromUpstream = true;
       out._upstreamStatus = res.status;
     }
-    console.log('api/auth/me: out', JSON.stringify(out, null, 2));
+
     return NextResponse.json({ ...out, data, headers }, { status: res.status });
   } catch (e: unknown) {
-    console.log('api/auth/me: error', e);
-    const msg = e instanceof Error ? e.message : 'Unknown error';
+    const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json(
-      {
-        error: 'MPE_WEB_UNREACHABLE',
-        message: `Cannot reach the MPE Web app at ${base}. Is it running? from /api/auth/me. ` + msg,
-        detail: msg,
-      },
+      { error: 'MPE_WEB_UNREACHABLE', message: `Cannot reach ${base}`, detail: msg },
       { status: 503 }
     );
   }
