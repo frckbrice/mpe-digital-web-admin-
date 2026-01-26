@@ -37,13 +37,12 @@ export function useLogin() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = (await res.json().catch((e) => {
-
-        console.log('useLogin: /api/auth/me', e);
-        return { user: null, message: 'Failed to get user' };
+        console.log('useLogin: /api/auth/me error', e);
+        return { user: null, message: e instanceof Error ? e.message : 'Failed to get user' };
       })) as { user?: User } & Record<string, unknown>;
-      console.log('useLogin: /api/auth/me', res);
+      console.log('useLogin: /api/auth/me response', JSON.stringify(res, null, 2));
       if (!res.ok) throw new Error(getApiErrorPayload(json, ''));
-      console.log('useLogin: /api/auth/me', json);
+      console.log('useLogin: /api/auth/me response json', json);
 
       const { user } = json;
       console.log('useLogin: /api/auth/me', { userId: user?.id, role: user?.role });
