@@ -3,6 +3,8 @@ import { getMpeWebAppBaseUrl } from '@/lib/mpe-web-url';
 
 export const dynamic = 'force-dynamic';
 
+export const runtime = 'nodejs';
+
 /**
  * GET /api/auth/me — same-origin proxy to MPE Web. MPE Web verifies the ID token and returns the user.
  *
@@ -45,7 +47,14 @@ export async function GET(req: NextRequest) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json', Authorization: authHeader };
 
   try {
-    const res = await fetch(`${base}/api/auth/me`, { headers });
+    const res = await fetch(`${base}/api/auth/me`, {
+      headers: {
+        Authorization: authHeader,
+        'Content-Type': 'application/json',
+        'X-Forwarded-From': 'admin-app',
+        'X-Admin-Proxy': 'true',
+      },
+    });
     const data = await res.json().catch(() => ({}));
     const out: Record<string, unknown> = { ...data };
     if (res.status >= 400) {

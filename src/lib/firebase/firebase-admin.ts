@@ -63,6 +63,7 @@ const initializeFirebaseAdmin = () => {
       }),
     };
 
+    console.log('initConfig', initConfig);
 
     adminApp = initializeApp(initConfig);
     adminAuth = getAuth(adminApp);

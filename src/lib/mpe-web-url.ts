@@ -3,11 +3,18 @@
  * Used by api-client and by /api/auth/* proxy routes.
  */
 
-const isDev = process.env.NODE_ENV === 'development';
+export function getMpeWebAppBaseUrl() {
+  // Local dev
+  if (process.env.NODE_ENV === 'development') {
+    return process.env.NEXT_PUBLIC_LOCAL_APP_URL;
+  }
 
-export function getMpeWebAppBaseUrl(): string {
-  const local = process.env.NEXT_PUBLIC_LOCAL_APP_URL || '';
-  const prod = process.env.NEXT_PUBLIC_APP_URL || '';
-  const base = isDev ? local : prod;
-  return (base || '').replace(/\/$/, '');
+  // Preview deployments
+  if (process.env.VERCEL_ENV === 'preview') {
+    return process.env.NEXT_PUBLIC_PREVIEW_APP_URL;
+  }
+
+  // Production
+  return process.env.NEXT_PUBLIC_APP_URL;
 }
+
