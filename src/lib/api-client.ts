@@ -2,7 +2,7 @@
 
 import { auth } from './firebase/firebase-client';
 import { getValidIdToken } from './utils/token-refresh';
-import { authLog, authError } from './utils/auth-logger';
+import { authLog, authError, authWarn } from './utils/auth-logger';
 import { getMpeWebAppBaseUrl } from './mpe-web-url';
 
 export { getMpeWebAppBaseUrl } from './mpe-web-url';
@@ -32,6 +32,14 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (auth?.currentUser) {
     try {
       token = await getValidIdToken(false);
+      // Fallback: if getValidIdToken returns null but currentUser exists, try direct getIdToken
+      if (!token && auth.currentUser) {
+        try {
+          token = await auth.currentUser.getIdToken();
+        } catch (e) {
+          authWarn('apiFetch: direct getIdToken fallback failed', e);
+        }
+      }
       console.log('apiFetch: token', token);
       if (isAuthPath) authLog('apiFetch: token', { path, hasToken: !!token });
     } catch (e) {

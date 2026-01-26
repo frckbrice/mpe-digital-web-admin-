@@ -5,7 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { ensureFirebaseInitialized } from '@/lib/firebase/firebase-client';
 import { useAuthStore } from '@/components/features/auth/store/authStore';
 import { setupTokenRefresh } from '@/lib/utils/token-refresh';
-import { authLog, authError } from '@/lib/utils/auth-logger';
+import { authLog, authError, authWarn } from '@/lib/utils/auth-logger';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { syncAuthState, setLoading } = useAuthStore();
@@ -33,7 +33,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (fbUser) {
         try {
           const { getValidIdToken } = await import('@/lib/utils/token-refresh');
-          const token = await getValidIdToken(false);
+          let token = await getValidIdToken(false);
+          // Fallback: if getValidIdToken returns null but user exists, try direct getIdToken
+          if (!token) {
+            authLog('AuthProvider: getValidIdToken returned null, trying direct getIdToken');
+            try {
+              token = await fbUser.getIdToken();
+            } catch (e) {
+              authWarn('AuthProvider: direct getIdToken failed', e);
+            }
+          }
           authLog('AuthProvider: got id token', { hasToken: !!token });
           if (token) await syncAuthState(fbUser, token);
           else await syncAuthState(null, '');
