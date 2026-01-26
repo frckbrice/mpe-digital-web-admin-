@@ -45,6 +45,8 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (!(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
   }
+  // Merge caller headers first. Explicit Authorization from caller (e.g. syncAuthState, useLogin)
+  // is kept when getValidIdToken failed, so /api/auth/me does not get 401 for missing header.
   if (options.headers) {
     if (options.headers instanceof Headers) {
       options.headers.forEach((v, k) => { headers[k] = v; });
@@ -58,6 +60,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
 
   console.log('apiFetch: url', url);
   console.log('apiFetch: headers', headers);
+  console.log('apiFetch: options', { ...options, headers });
 
   try {
     return await fetch(url, { ...options, headers });
