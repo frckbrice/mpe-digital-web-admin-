@@ -23,7 +23,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   const p = path.startsWith('/') ? path : '/' + path;
   const useProxy =
     typeof window !== 'undefined' &&
-    (/^\/api\/auth\/(logout|google|profile|me)$/.test(p) ||
+    (/^\/api\/auth\/(logout|google|profile)$/.test(p) ||
       /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p));
   const url = useProxy ? p : `${base}${p}`;
 
