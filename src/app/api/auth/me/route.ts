@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMpeWebAppBaseUrl } from '@/lib/mpe-web-url';
-import { adminAuth } from '@/lib/firebase/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/auth/me — same-origin proxy to MPE Web (verifies ID token, fetches user from MPE Web).
+ * GET /api/auth/me — same-origin proxy to MPE Web. MPE Web verifies the ID token and returns the user.
  *
  * The browser calls this route (api-client routes /api/auth/me through the proxy). This avoids
  * CORS and "Failed to fetch" when MPE Web is unreachable or does not allow the Admin app's origin.
  *
- * If Firebase Admin is configured, we verify the ID token here; otherwise we rely on MPE Web.
- * 401: AUTH_HEADER_MISSING | TOKEN_EMPTY | TOKEN_INVALID (this route) or from MPE Web (_fromUpstream: true).
+ * We do NOT verify the token in the Admin app: MPE Web is the single source of truth (Firebase Admin
+ * + DB). Verifying here required the Admin app to have FIREBASE_* env vars matching the client's
+ * project; misconfiguration (e.g. FIREBASE_PRIVATE_KEY newlines on Vercel, or a different project)
+ * caused 401 before the request reached MPE Web.
+ *
+ * 401: AUTH_HEADER_MISSING | TOKEN_EMPTY (this route) or from MPE Web (_fromUpstream: true).
  * 503: MPE Web unreachable (NEXT_PUBLIC_APP_URL / NEXT_PUBLIC_LOCAL_APP_URL wrong or MPE Web down).
  */
 export async function GET(req: NextRequest) {
@@ -29,23 +32,6 @@ export async function GET(req: NextRequest) {
       { success: false, message: 'Token is empty.', code: 'TOKEN_EMPTY' },
       { status: 401 }
     );
-  }
-
-  // Verify ID token with firebase-admin when available (same as MPE Web app)
-  if (adminAuth) {
-    try {
-      await adminAuth.verifyIdToken(token);
-    } catch (verifyError: unknown) {
-      const message = verifyError instanceof Error ? verifyError.message : 'Invalid or expired token';
-      return NextResponse.json(
-        {
-          success: false,
-          message: `${message} In production, ensure FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY (with \\n as literal newlines), and FIREBASE_CLIENT_EMAIL match the Firebase project used by the client.`,
-          code: 'TOKEN_INVALID',
-        },
-        { status: 401 }
-      );
-    }
   }
 
   const base = getMpeWebAppBaseUrl();
