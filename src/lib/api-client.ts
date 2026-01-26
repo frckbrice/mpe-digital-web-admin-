@@ -17,13 +17,13 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     );
   }
   // In the browser, /api/auth/* and /api/admin/*, ... go through same-origin proxy to avoid CORS.
-  // /api/auth/me is now proxied too: the Admin app's /api/auth/me route forwards to MPE Web
-  // server-side, avoiding browser CORS and "Failed to fetch" when MPE Web is unreachable or
-  // does not allow the Admin app's origin.
+  // /api/auth/me is proxied: the Admin app's /api/auth/me route forwards to MPE Web server-side,
+  // avoiding browser CORS and "Failed to fetch" when MPE Web is unreachable or does not allow
+  // the Admin app's origin.
   const p = path.startsWith('/') ? path : '/' + path;
   const useProxy =
     typeof window !== 'undefined' &&
-    (/^\/api\/auth\/(logout|google|profile)$/.test(p) ||
+    (/^\/api\/auth\/(me|logout|google|profile)$/.test(p) ||
       /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p));
   const url = useProxy ? p : `${base}${p}`;
 
