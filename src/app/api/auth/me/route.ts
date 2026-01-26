@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
     'Content-Type': 'application/json',
     'X-Forwarded-From': 'admin-app',
     'X-Admin-Proxy': 'true',
+    origin: base
   };
 
   try {
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
       out._upstreamStatus = res.status;
     }
 
-    return NextResponse.json({ ...out, data, headers }, { status: res.status });
+    return NextResponse.json({ ...out, data }, { status: res.status });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json(
