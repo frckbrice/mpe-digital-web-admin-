@@ -22,19 +22,28 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
       authLog('useLogin: starting email/password sign-in', { email: data.email });
+      console.log('useLogin: starting email/password sign-in', { email: data.email });
       const fb = ensureFirebaseInitialized();
       const cred = await signInWithEmailAndPassword(fb, data.email, data.password);
       authLog('useLogin: Firebase sign-in OK, getting id token');
+      console.log('useLogin: Firebase sign-in OK, getting id token');
       const token = await cred.user.getIdToken();
       const { apiFetch } = await import('@/lib/api-client');
       authLog('useLogin: calling /api/auth/me');
+      console.log('useLogin: calling /api/auth/me');
       // Pass token explicitly: auth.currentUser can lag briefly after sign-in, so getValidIdToken
       // may be null in apiFetch. Sending the token we just got avoids that race in production.
       const res = await apiFetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const json = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
+      const json = (await res.json().catch((e) => {
+
+        console.log('useLogin: /api/auth/me', e);
+        return { user: null, message: 'Failed to get user' };
+      })) as { user?: User } & Record<string, unknown>;
+      console.log('useLogin: /api/auth/me', res);
       if (!res.ok) throw new Error(getApiErrorPayload(json, ''));
+      console.log('useLogin: /api/auth/me', json);
 
       const { user } = json;
       console.log('useLogin: /api/auth/me', { userId: user?.id, role: user?.role });
@@ -50,6 +59,7 @@ export function useLogin() {
     },
     onError: (e) => {
       authError('useLogin: error', e);
+      console.log('useLogin: error', e);
       const msg = e instanceof Error ? e.message : (e != null && typeof e === 'object' && 'message' in e && typeof (e as { message?: unknown }).message === 'string' ? (e as { message: string }).message : String(e ?? ''));
       toast.error(msg);
     },
