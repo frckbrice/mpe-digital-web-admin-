@@ -57,13 +57,17 @@ export async function GET(req: NextRequest) {
     const res = await fetch(`${base}/api/auth/me`, {
       headers,
     });
+    if (!res.ok) {
+      const text = await res.text(); // don't parse as JSON yet
+      console.error('Response not OK:', res, text);
+      return;
+    }
     const data = await res.json().catch((e) => {
       console.log('api/auth/me: error', e);
-      return { user: null, message: e instanceof Error ? e.message : 'Failed to get user' };
     });
-    console.log('api/auth/me: data', data);
+    console.log('api/auth/me: user data', data);
     const out: Record<string, unknown> = { ...data };
-    console.log('api/auth/me: res', JSON.stringify(res, null, 2));
+    console.log('api/auth/me: res', res);
     if (res.status >= 400) {
       out._fromUpstream = true;
       out._upstreamStatus = res.status;

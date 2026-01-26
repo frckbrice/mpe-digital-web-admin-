@@ -36,11 +36,13 @@ export function useLogin() {
       const res = await apiFetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const json = (await res.json().catch((e) => {
-        console.log('useLogin: /api/auth/me error', e);
-        return { user: null, message: e instanceof Error ? e.message : 'Failed to get user' };
-      })) as { user?: User } & Record<string, unknown>;
-      console.log('useLogin: /api/auth/me response', JSON.stringify(res, null, 2));
+      console.log('useLogin: /api/auth/me response', res);
+      if (!res.ok) {
+        const text = await res.text(); // don't parse as JSON yet
+        console.error('Response not OK:', res, text);
+      }
+
+      const json = (await res.json().catch((e) => ({})));
       if (!res.ok) throw new Error(getApiErrorPayload(json, ''));
       console.log('useLogin: /api/auth/me response json', json);
 
