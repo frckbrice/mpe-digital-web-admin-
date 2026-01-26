@@ -44,25 +44,35 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json', Authorization: authHeader };
+  const headers: Record<string, string> = {
+    Authorization: authHeader,
+    'Content-Type': 'application/json',
+    'X-Forwarded-From': 'admin-app',
+    'X-Admin-Proxy': 'true',
+  };
 
+  console.log('api/auth/me: headers', headers);
+  console.log('api/auth/me: base', base);
   try {
     const res = await fetch(`${base}/api/auth/me`, {
-      headers: {
-        Authorization: authHeader,
-        'Content-Type': 'application/json',
-        'X-Forwarded-From': 'admin-app',
-        'X-Admin-Proxy': 'true',
-      },
+      headers,
     });
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch((e) => {
+      console.log('api/auth/me: error', e);
+      return { user: null, message: 'Failed to get user' };
+    });
+    console.log('api/auth/me: data', data);
     const out: Record<string, unknown> = { ...data };
+    console.log('api/auth/me: out', out);
+    console.log('api/auth/me: res.status', res.status);
     if (res.status >= 400) {
       out._fromUpstream = true;
       out._upstreamStatus = res.status;
     }
+    console.log('api/auth/me: out', out);
     return NextResponse.json(out, { status: res.status });
   } catch (e: unknown) {
+    console.log('api/auth/me: error', e);
     const msg = e instanceof Error ? e.message : 'Unknown error';
     return NextResponse.json(
       {
