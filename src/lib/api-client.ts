@@ -16,12 +16,14 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       'In production set NEXT_PUBLIC_APP_URL. Ensure the MPE Web app is running at that URL.'
     );
   }
-  // In the browser, /api/auth/*, /api/admin/*, ... go through same-origin proxy to avoid CORS.
-  // (Direct calls to MPE Web trigger OPTIONS preflight; if MPE Web returns 401 on OPTIONS, the request is blocked.)
+  // In the browser, /api/auth/logout|google|profile and /api/admin/*, ... go through same-origin proxy
+  // to avoid CORS. /api/auth/me is excluded: the browser calls MPE Web's /api/auth/me directly so the
+  // server does not proxy it. MPE Web must allow the Admin app's origin in CORS and allow the
+  // Authorization header for /api/auth/me (GET with Bearer token triggers a preflight).
   const p = path.startsWith('/') ? path : '/' + path;
   const useProxy =
     typeof window !== 'undefined' &&
-    (/^\/api\/auth\/(me|logout|google|profile)$/.test(p) ||
+    (/^\/api\/auth\/(logout|google|profile)$/.test(p) ||
       /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p));
   const url = useProxy ? p : `${base}${p}`;
 
@@ -56,7 +58,9 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
       Object.assign(headers, options.headers);
     }
   }
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  // Prefer caller's explicit Authorization (e.g. useLogin, syncAuthState) over getValidIdToken
+  // to avoid overwriting a fresh token with a stale one, especially in production after sign-in.
+  if (!headers['Authorization'] && token) headers['Authorization'] = `Bearer ${token}`;
 
   console.log('apiFetch: url', url);
   console.log('apiFetch: headers', headers);

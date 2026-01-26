@@ -24,11 +24,16 @@ Admin dashboard for [MPE Web app](../MPE%20Web%20app/). Authenticates with the s
 
 2. **CORS on MPE Web app**
 
-   So this app can call the MPE Web app API from the browser, set in the MPE Web app `.env`:
+   The browser calls the MPE Web app API **directly** (e.g. `GET /api/auth/me` with `Authorization: Bearer <token>`). To avoid CORS blockage, the MPE Web app must allow:
+
+   - **Origin**: the Admin app URL (e.g. `http://localhost:3001` in dev, or your production admin URL)
+   - **Headers**: `Authorization`, `Content-Type` (the `Authorization` header triggers a preflight)
+
+   Set in the MPE Web app `.env`:
 
    - `ADMIN_APP_URL=http://localhost:3001` (or your admin app URL)
 
-   Dev: localhost origins are usually allowed by the MPE Web app CORS middleware.
+   Ensure MPE Web’s CORS config uses `ADMIN_APP_URL` (or equivalent) for `Access-Control-Allow-Origin` on `/api/auth/me` and that `Access-Control-Allow-Headers` includes `Authorization`. Dev: localhost origins are usually allowed by the MPE Web app CORS middleware.
 
 3. **Install and run**
 
