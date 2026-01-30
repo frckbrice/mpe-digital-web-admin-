@@ -1,5 +1,31 @@
 'use client';
 
+/**
+ * Component: DashboardPageClient
+ * 
+ * Main dashboard home page component that displays an overview of key statistics
+ * and metrics for administrators and moderators.
+ * 
+ * Features:
+ * - Displays summary statistics (users, quotes, messages, documents)
+ * - Shows quote status breakdown
+ * - Auto-refreshes statistics every 60 seconds
+ * - Loading and error states
+ * - Internationalization support
+ * 
+ * Data Flow:
+ * - Fetches statistics from /api/admin/stats endpoint
+ * - Uses React Query with automatic refetch interval
+ * - Displays data in stat cards and breakdown sections
+ * 
+ * Statistics Displayed:
+ * - Total users (all roles)
+ * - Total quotes
+ * - Total messages
+ * - Total documents
+ * - Quote status breakdown (submitted, in progress, completed, etc.)
+ */
+
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,8 +33,36 @@ import { StatCard } from '@/components/ui/stat-card';
 import { Loader2, Users, FileText, MessageSquare, FolderOpen, TrendingUp } from 'lucide-react';
 import { fetchAdminStats } from '../api/queries';
 
+/**
+ * Maps quote status to its translation key for i18n
+ * @param status - Quote status string
+ * @returns Translation key for the status
+ */
+function getStatusTranslationKey(status: string): string {
+  const statusMap: Record<string, string> = {
+    SUBMITTED: 'dashboard.quotes.statusSubmitted',
+    UNDER_REVIEW: 'dashboard.quotes.statusUnderReview',
+    QUOTE_PREPARED: 'dashboard.quotes.statusQuotePrepared',
+    QUOTE_SENT: 'dashboard.quotes.statusQuoteSent',
+    CLIENT_REVIEWING: 'dashboard.quotes.statusClientReviewing',
+    ACCEPTED: 'dashboard.quotes.statusAccepted',
+    REJECTED: 'dashboard.quotes.statusRejected',
+    IN_PROGRESS: 'dashboard.quotes.statusInProgress',
+    COMPLETED: 'dashboard.quotes.statusCompleted',
+    CANCELLED: 'dashboard.quotes.statusCancelled',
+  };
+  return statusMap[status] || status;
+}
+
+/**
+ * Dashboard Home Page Component
+ * 
+ * Renders the main dashboard overview with statistics cards and quote status breakdown.
+ * Automatically refreshes data every 60 seconds to keep statistics up-to-date.
+ */
 export function DashboardPageClient() {
   const { t } = useTranslation();
+
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['admin', 'stats'],
     queryFn: fetchAdminStats,
@@ -86,7 +140,7 @@ export function DashboardPageClient() {
                 {recentQuotes.slice(0, 5).map((q) => (
                   <li key={q.id} className="flex justify-between border-b border-border pb-2 last:border-0">
                     <span className="font-mono text-muted-foreground">{q.referenceNumber}</span>
-                    <span className="capitalize">{q.status.toLowerCase().replace('_', ' ')}</span>
+                    <span>{t(getStatusTranslationKey(q.status))}</span>
                   </li>
                 ))}
               </ul>

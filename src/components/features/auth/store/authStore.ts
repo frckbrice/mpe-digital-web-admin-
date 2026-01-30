@@ -10,7 +10,7 @@ export interface User {
   lastName: string;
   phone?: string;
   profilePicture?: string;
-  role: 'CLIENT' | 'AGENT' | 'ADMIN';
+  role: 'CLIENT' | 'AGENT' | 'MODERATOR' | 'ADMIN';
   isVerified: boolean;
   isActive: boolean;
   firebaseId?: string;
@@ -133,9 +133,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         return;
       }
 
-      // Admin app: only ADMIN role is allowed
-      if (user.role !== 'ADMIN') {
-        authLog('syncAuthState: user role is not ADMIN, clearing auth', { role: user.role });
+      // Admin app: only ADMIN and MODERATOR roles are allowed
+      if (user.role !== 'ADMIN' && user.role !== 'MODERATOR') {
+        authLog('syncAuthState: user role is not ADMIN or MODERATOR, clearing auth', { role: user.role });
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false, isLoading: false });
         if (typeof window !== 'undefined') { localStorage.removeItem('userCache'); localStorage.removeItem('authTimestamp'); }
         return;

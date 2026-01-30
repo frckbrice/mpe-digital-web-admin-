@@ -26,6 +26,16 @@ import { fetchAgentDetail } from '../api/queries';
 import { AGENT_ROLES } from '../api/data';
 import type { UpdateAgentPayload } from '../api/mutations';
 
+function getRoleTranslationKey(role: string): string {
+  const roleMap: Record<string, string> = {
+    CLIENT: 'common.roleClient',
+    AGENT: 'common.roleAgent',
+    MODERATOR: 'common.roleModerator',
+    ADMIN: 'common.roleAdmin',
+  };
+  return roleMap[role] || role;
+}
+
 interface EditAgentDialogProps {
   userId: string;
   onClose: () => void;
@@ -96,7 +106,7 @@ export function EditAgentDialog({ userId, onClose, onSave, isPending }: EditAgen
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {AGENT_ROLES.map((r) => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                    <SelectItem key={r} value={r}>{t(getRoleTranslationKey(r))}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
