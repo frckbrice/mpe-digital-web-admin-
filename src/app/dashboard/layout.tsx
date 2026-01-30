@@ -43,15 +43,25 @@ const MPE_WEB_APP_URL = getMpeWebAppBaseUrl() || process.env.NEXT_PUBLIC_MPE_WEB
 
 const ADMIN_BADGE_CLASS = 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
 
-const nav = [
-  { href: '/dashboard', labelKey: 'dashboard.layout.navDashboard', icon: LayoutDashboard },
-  { href: '/dashboard/stats', labelKey: 'dashboard.layout.navStats', icon: BarChart2 },
-  { href: '/dashboard/quotes', labelKey: 'dashboard.layout.navQuotes', icon: FileText },
-  { href: '/dashboard/clients', labelKey: 'dashboard.layout.navClients', icon: User },
-  { href: '/dashboard/agents', labelKey: 'dashboard.layout.navAgents', icon: UserCog },
-  { href: '/dashboard/users', labelKey: 'dashboard.layout.navUsers', icon: Users },
-  { href: '/dashboard/profile', labelKey: 'dashboard.layout.navProfile', icon: User },
-];
+// Navigation items - some are admin-only (ADMIN_MODERATOR_ENDPOINTS)
+const getNavItems = (userRole?: string) => {
+  const baseNav = [
+    { href: '/dashboard', labelKey: 'dashboard.layout.navDashboard', icon: LayoutDashboard },
+    { href: '/dashboard/stats', labelKey: 'dashboard.layout.navStats', icon: BarChart2 },
+    { href: '/dashboard/quotes', labelKey: 'dashboard.layout.navQuotes', icon: FileText },
+    { href: '/dashboard/clients', labelKey: 'dashboard.layout.navClients', icon: User },
+    { href: '/dashboard/agents', labelKey: 'dashboard.layout.navAgents', icon: UserCog },
+    { href: '/dashboard/users', labelKey: 'dashboard.layout.navUsers', icon: Users },
+    { href: '/dashboard/profile', labelKey: 'dashboard.layout.navProfile', icon: User },
+  ];
+  // Moderators and admins have the same navigation access
+  let items = [...baseNav];
+  // Only admins can see moderators management
+  if (userRole === 'ADMIN') {
+    items.splice(5, 0, { href: '/dashboard/moderators', labelKey: 'dashboard.layout.navModerators', icon: UserCog });
+  }
+  return items;
+};
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -76,12 +86,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       router.replace('/login');
       return;
     }
-    if (!isLoading && isAuthenticated && user?.role !== 'ADMIN') {
+    if (!isLoading && isAuthenticated && user?.role !== 'ADMIN' && user?.role !== 'MODERATOR') {
       router.replace('/login');
     }
   }, [isLoading, isAuthenticated, user?.role, router]);
 
-  if (isLoading || !isAuthenticated || user?.role !== 'ADMIN') {
+  if (isLoading || !isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'MODERATOR')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background dark:bg-[#091a24]">
         <Loader2 className="h-12 w-12 animate-spin text-[#fe4438]" />
@@ -95,6 +105,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (fromName) return fromName;
     return (user.email?.charAt(0) || '?').toUpperCase();
   };
+
+  const navItems = getNavItems(user?.role);
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,7 +134,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     <SheetTitle className="text-left text-foreground">{t('dashboard.layout.navigation')}</SheetTitle>
                   </SheetHeader>
                   <nav className="mt-6 space-y-2 overflow-hidden">
-                    {nav.map(({ href, labelKey, icon: Icon }) => (
+                    {navItems.map(({ href, labelKey, icon: Icon }) => (
                       <Link
                         key={href}
                         href={href}
@@ -236,7 +248,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                       <Badge className={cn('w-fit mt-1', ADMIN_BADGE_CLASS)}>
-                        {t('dashboard.layout.admin')}
+                        {user?.role === 'MODERATOR' ? t('dashboard.layout.moderator') : t('dashboard.layout.admin')}
                       </Badge>
                     </div>
                   </DropdownMenuLabel>
@@ -283,7 +295,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <aside className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] border-r hidden md:block dark:bg-[#091a24] border-[#091a24] bg-[#178279] overflow-y-auto">
           <div className="w-full">
             <nav className="p-4 space-y-2">
-              {nav.map(({ href, labelKey, icon: Icon }) => {
+              {navItems.map(({ href, labelKey, icon: Icon }) => {
                 const isActive = pathname === href;
                 return (
                   <NavLink key={href} href={href} icon={Icon} isActive={isActive}>

@@ -1,6 +1,37 @@
 'use client';
 
+/**
+ * Component: StatsPageClient
+ * 
+ * Detailed statistics page component that displays comprehensive metrics and analytics
+ * for administrators. Provides more detailed statistics than the dashboard home page.
+ * 
+ * Features:
+ * - Displays detailed statistics (users by role, quotes, messages, documents)
+ * - Shows quote status breakdown with visual indicators
+ * - Shows user role breakdown
+ * - Auto-refreshes statistics every 60 seconds
+ * - Loading and error states
+ * - Internationalization support
+ * - Redirects to dashboard if user is not authenticated
+ * 
+ * Data Flow:
+ * - Fetches statistics from /api/admin/stats endpoint
+ * - Uses React Query with automatic refetch interval
+ * - Displays data in stat cards and detailed breakdown sections
+ * 
+ * Statistics Displayed:
+ * - Users by role (ADMIN, MODERATOR, AGENT, CLIENT)
+ * - Active vs inactive users
+ * - Total quotes with status breakdown
+ * - Total messages
+ * - Total documents
+ * - Quote status distribution
+ */
+
 import { useTranslation } from 'react-i18next';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
@@ -20,8 +51,37 @@ import {
 } from 'lucide-react';
 import { fetchStats } from '../api/queries';
 
+/**
+ * Maps quote status to its translation key for i18n
+ * @param status - Quote status string
+ * @returns Translation key for the status
+ */
+function getStatusTranslationKey(status: string): string {
+  const statusMap: Record<string, string> = {
+    SUBMITTED: 'dashboard.quotes.statusSubmitted',
+    UNDER_REVIEW: 'dashboard.quotes.statusUnderReview',
+    QUOTE_PREPARED: 'dashboard.quotes.statusQuotePrepared',
+    QUOTE_SENT: 'dashboard.quotes.statusQuoteSent',
+    CLIENT_REVIEWING: 'dashboard.quotes.statusClientReviewing',
+    ACCEPTED: 'dashboard.quotes.statusAccepted',
+    REJECTED: 'dashboard.quotes.statusRejected',
+    IN_PROGRESS: 'dashboard.quotes.statusInProgress',
+    COMPLETED: 'dashboard.quotes.statusCompleted',
+    CANCELLED: 'dashboard.quotes.statusCancelled',
+  };
+  return statusMap[status] || status;
+}
+
+/**
+ * Stats Page Component
+ * 
+ * Renders a detailed statistics page with comprehensive metrics and analytics.
+ * Automatically refreshes data every 60 seconds to keep statistics up-to-date.
+ * Redirects to dashboard if user is not authenticated.
+ */
 export function StatsPageClient() {
   const { t } = useTranslation();
+
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['admin', 'stats'],
     queryFn: fetchStats,
@@ -115,7 +175,7 @@ export function StatsPageClient() {
                     <tr key={q.id} className="border-b border-border last:border-0">
                       <td className="py-2 font-mono text-muted-foreground">{q.referenceNumber}</td>
                       <td className="py-2">{q.client ? `${q.client.firstName} ${q.client.lastName}` : '—'}</td>
-                      <td className="py-2 capitalize">{q.status.toLowerCase().replace('_', ' ')}</td>
+                      <td className="py-2">{t(getStatusTranslationKey(q.status))}</td>
                       <td className="py-2 text-muted-foreground">{q.submissionDate ? new Date(q.submissionDate).toLocaleDateString() : '—'}</td>
                     </tr>
                   ))}

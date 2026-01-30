@@ -40,7 +40,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
           authWarn('apiFetch: direct getIdToken fallback failed', e);
         }
       }
-      console.log('apiFetch: token', token);
+
       if (isAuthPath) authLog('apiFetch: token', { path, hasToken: !!token });
     } catch (e) {
       console.log('apiFetch: failed to get auth token', e);
@@ -71,7 +71,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (!headers['Authorization'] && token) headers['Authorization'] = `Bearer ${token}`;
 
   try {
-    console.log('apiFetch: fetching', url);
+
     return await fetch(url, { ...options, headers });
   } catch (e) {
     console.log('apiFetch: failed to fetch', e);

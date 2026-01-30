@@ -1,5 +1,32 @@
 'use client';
 
+/**
+ * Component: LoginForm
+ * 
+ * Authentication form component that handles user login via email/password or Google OAuth.
+ * 
+ * Features:
+ * - Email/password authentication
+ * - Google OAuth authentication
+ * - Password visibility toggle
+ * - Loading states during authentication
+ * - Form validation
+ * - Internationalization support
+ * 
+ * Authentication Flow:
+ * - Email/password: Calls useLogin mutation which authenticates via /api/auth/login
+ * - Google OAuth: Calls useGoogleLogin mutation which redirects to Google OAuth flow
+ * 
+ * State Management:
+ * - Local state for form inputs (email, password)
+ * - Local state for password visibility toggle
+ * - Uses React Query mutations for authentication
+ * 
+ * Error Handling:
+ * - Errors are handled by the mutation hooks and displayed via toast notifications
+ * - Form validation is handled by HTML5 required attributes
+ */
+
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useLogin, useGoogleLogin } from '../api/useAuth';
@@ -10,6 +37,12 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
+/**
+ * Login Form Component
+ * 
+ * Renders a card-based login form with email/password and Google OAuth options.
+ * Handles form submission and displays loading states during authentication.
+ */
 export function LoginForm() {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
