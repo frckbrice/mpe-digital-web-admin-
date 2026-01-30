@@ -1,5 +1,36 @@
 'use client';
 
+/**
+ * Component: AgentsPageClient
+ * 
+ * Main client component for the Agents management page. Displays a table of agents with
+ * filtering, search, pagination, and management capabilities.
+ * 
+ * Features:
+ * - Displays agents in a sortable, paginated data table
+ * - Filter by active/inactive status
+ * - Search functionality for finding specific agents
+ * - Edit agent details (name, email, etc.)
+ * - Deactivate agents
+ * - Demote agents to CLIENT role
+ * - Shows assigned quotes count and last login time
+ * - Optimistic updates for better UX
+ * 
+ * State Management:
+ * - Uses React Query for data fetching and caching
+ * - Implements optimistic updates for agent modifications
+ * - Manages local state for filters, search, pagination, and dialog visibility
+ * 
+ * Data Flow:
+ * - Fetches agents from /api/admin/agents endpoint
+ * - Updates are handled via mutations with optimistic UI updates
+ * - Invalidates related queries after mutations (agents, clients)
+ * 
+ * Role Management:
+ * - Allows demoting agents to CLIENT role
+ * - Deactivation sets isActive to false without changing role
+ */
+
 import { useTranslation } from 'react-i18next';
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -38,6 +69,12 @@ import { updateAgent, deactivateAgent } from '../api/mutations';
 import type { AgentRow, AgentsRes } from '../api/types';
 import { EditAgentDialog } from './EditAgentDialog';
 
+/**
+ * Agents Page Component
+ * 
+ * Renders a comprehensive agents management interface with filtering, search,
+ * data table, and agent management actions (edit, deactivate, demote).
+ */
 export function AgentsPageClient() {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');

@@ -2,6 +2,15 @@
  * Quotes feature - shared types
  */
 
+/** Attachment metadata for message/email (after upload). */
+export interface MessageAttachment {
+  url: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadedAt?: string;
+}
+
 export interface QuoteRow {
   id: string;
   referenceNumber: string;

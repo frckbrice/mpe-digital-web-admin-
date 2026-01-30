@@ -1,5 +1,41 @@
 'use client';
 
+/**
+ * Component: ProfilePageClient
+ * 
+ * User profile page component that allows users to view and edit their profile information.
+ * 
+ * Features:
+ * - Displays user profile information (name, email, phone, role)
+ * - Edit mode for updating profile details
+ * - Avatar display with initials fallback
+ * - Role badge display
+ * - Account status indicator (active/inactive)
+ * - Form validation
+ * - Loading states during save
+ * - Toast notifications for success/error
+ * 
+ * State Management:
+ * - Uses authStore for user data
+ * - Local state for edit mode and form data
+ * - Syncs form data with user data from authStore
+ * 
+ * Data Flow:
+ * - Reads user data from authStore
+ * - Updates profile via /api/auth/profile endpoint
+ * - Updates authStore after successful update
+ * 
+ * Editable Fields:
+ * - First name
+ * - Last name
+ * - Phone number (optional)
+ * 
+ * Read-only Fields:
+ * - Email (managed by authentication system)
+ * - Role (managed by administrators)
+ * - Account status
+ */
+
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/components/features/auth';
@@ -15,6 +51,12 @@ import { User, Mail, Phone, Edit2, Save, X, Loader2, Shield, CheckCircle, XCircl
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+/**
+ * Profile Page Component
+ * 
+ * Renders a user profile page with editable profile information and account details.
+ * Supports edit mode for updating user information.
+ */
 export function ProfilePageClient() {
   const { t } = useTranslation();
   const { user, setUser } = useAuthStore();

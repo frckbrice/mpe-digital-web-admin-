@@ -1,18 +1,12 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
-} from 'firebase/auth';
-import { ensureFirebaseInitialized } from '@/lib/firebase/firebase-client';
-import { useAuthStore, type User } from '../store/authStore';
+import { useAuthStore } from '../store/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { getApiErrorPayload, getSafeErrorMessage } from '@/lib/utils/error-sanitizer';
-import { authLog, authError, authWarn } from '@/lib/utils/auth-logger';
+import { getSafeErrorMessage } from '@/lib/utils/error-sanitizer';
+import { authLog, authError } from '@/lib/utils/auth-logger';
+import { loginWithEmail, loginWithGoogle, logoutUser } from './mutations';
 
 export function useLogin() {
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -20,37 +14,7 @@ export function useLogin() {
   const q = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
-      authLog('useLogin: starting email/password sign-in', { email: data.email });
-      console.log('useLogin: starting email/password sign-in', { email: data.email });
-      const fb = ensureFirebaseInitialized();
-      const cred = await signInWithEmailAndPassword(fb, data.email, data.password);
-      authLog('useLogin: Firebase sign-in OK, getting id token');
-      console.log('useLogin: Firebase sign-in OK, getting id token');
-      const token = await cred.user.getIdToken();
-      const { apiFetch } = await import('@/lib/api-client');
-      authLog('useLogin: calling /api/auth/me');
-      console.log('useLogin: calling /api/auth/me');
-      // Pass token explicitly: auth.currentUser can lag briefly after sign-in, so getValidIdToken
-      // may be null in apiFetch. Sending the token we just got avoids that race in production.
-      const res = await apiFetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log('useLogin: /api/auth/me response', res);
-      if (!res.ok) {
-        const text = await res.text(); // don't parse as JSON yet
-        console.error('Response not OK:', res, text);
-      }
-
-      const json = (await res.json().catch((e) => ({})));
-      if (!res.ok) throw new Error(getApiErrorPayload(json, ''));
-      console.log('useLogin: /api/auth/me response json', json);
-
-      const { user } = json;
-      console.log('useLogin: /api/auth/me', { userId: user?.id, role: user?.role });
-      if (!user || user.role !== 'ADMIN') throw new Error('Access denied. Admin only.');
-      return { user, accessToken: token, refreshToken: token };
-    },
+    mutationFn: loginWithEmail,
     onSuccess: (data) => {
       authLog('useLogin: success, setting auth and redirecting to /dashboard', { userId: data.user.id });
       setAuth(data);
@@ -60,7 +24,6 @@ export function useLogin() {
     },
     onError: (e) => {
       authError('useLogin: error', e);
-      console.log('useLogin: error', e);
       const msg = e instanceof Error ? e.message : (e != null && typeof e === 'object' && 'message' in e && typeof (e as { message?: unknown }).message === 'string' ? (e as { message: string }).message : String(e ?? ''));
       toast.error(msg);
     },
@@ -73,35 +36,7 @@ export function useGoogleLogin() {
   const q = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
-      authLog('useGoogleLogin: starting Google sign-in popup');
-      const fb = ensureFirebaseInitialized();
-      const provider = new GoogleAuthProvider();
-      provider.addScope('profile');
-      provider.addScope('email');
-      const cred = await signInWithPopup(fb, provider);
-      authLog('useGoogleLogin: popup OK', { email: cred.user.email });
-      const token = await cred.user.getIdToken();
-      const { apiFetch } = await import('@/lib/api-client');
-      authLog('useGoogleLogin: calling /api/auth/google');
-      // Pass token in Authorization and in body so MPE Web can verify even if auth.currentUser lags.
-      const res = await apiFetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          idToken: token,
-          email: cred.user.email,
-          displayName: cred.user.displayName,
-          photoURL: cred.user.photoURL,
-        }),
-      });
-      const json = (await res.json().catch(() => ({}))) as { user?: User } & Record<string, unknown>;
-      if (!res.ok) throw new Error(getApiErrorPayload(json, 'Google sign-in failed'));
-      const { user } = json;
-      console.log('useGoogleLogin: /api/auth/google', { userId: user?.id, role: user?.role });
-      if (user?.role !== 'ADMIN') throw new Error('Access denied. Admin only.');
-      return { user, accessToken: token, refreshToken: token };
-    },
+    mutationFn: loginWithGoogle,
     onSuccess: (data) => {
       authLog('useGoogleLogin: success, setting auth and redirecting', { userId: data.user.id });
       setAuth(data);
@@ -111,7 +46,6 @@ export function useGoogleLogin() {
     },
     onError: (e) => {
       authError('useGoogleLogin: error', e);
-
       toast.error(getSafeErrorMessage(e, 'Google login failed').message);
     },
   });
@@ -123,23 +57,7 @@ export function useLogout() {
   const q = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
-      authLog('useLogout: signing out Firebase');
-      try {
-        const fb = ensureFirebaseInitialized();
-        await signOut(fb);
-        authLog('useLogout: Firebase signOut OK');
-      } catch (e) {
-        authWarn('useLogout: Firebase signOut', e);
-      }
-      try {
-        const { apiFetch } = await import('@/lib/api-client');
-        await apiFetch('/api/auth/logout', { method: 'POST' });
-        authLog('useLogout: /api/auth/logout OK');
-      } catch (e) {
-        authWarn('useLogout: /api/auth/logout', e);
-      }
-    },
+    mutationFn: logoutUser,
     onSuccess: () => {
       authLog('useLogout: success, clearing store and redirecting to /login');
       logout();

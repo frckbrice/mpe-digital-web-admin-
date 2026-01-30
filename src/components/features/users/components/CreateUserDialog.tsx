@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ROLES } from '../api/data';
+import { useAuthStore } from '@/components/features/auth';
 import type { CreateUserPayload } from '../api/mutations';
+
+function getRoleTranslationKey(role: string): string {
+  const roleMap: Record<string, string> = {
+    CLIENT: 'common.roleClient',
+    AGENT: 'common.roleAgent',
+    MODERATOR: 'common.roleModerator',
+    ADMIN: 'common.roleAdmin',
+  };
+  return roleMap[role] || role;
+}
 
 interface CreateUserDialogProps {
   open: boolean;
@@ -21,11 +32,20 @@ interface CreateUserDialogProps {
 
 export function CreateUserDialog({ open, onOpenChange, onSubmit, isPending }: CreateUserDialogProps) {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<string>('CLIENT');
+  const defaultRole = user?.role === 'MODERATOR' ? 'AGENT' : 'CLIENT';
+  const [role, setRole] = useState<string>(defaultRole);
+
+  useEffect(() => {
+    if (open && user?.role === 'MODERATOR') setRole('AGENT');
+  }, [open, user?.role]);
+
+  // MODERATOR can only create AGENT (ADMIN_MODERATOR_ENDPOINTS)
+  const availableRoles = user?.role === 'MODERATOR' ? (['AGENT'] as const) : ROLES;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +58,7 @@ export function CreateUserDialog({ open, onOpenChange, onSubmit, isPending }: Cr
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       phone: phone.trim() || undefined,
-      role: role || 'CLIENT',
+      role: role || defaultRole,
       isActive: true,
     });
   };
@@ -57,7 +77,7 @@ export function CreateUserDialog({ open, onOpenChange, onSubmit, isPending }: Cr
             <div><Label>{t('common.lastName')} *</Label><Input value={lastName} onChange={(e) => setLastName(e.target.value)} required /></div>
           </div>
           <div><Label>{t('common.phone')}</Label><Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
-          <div><Label>{t('common.role')}</Label><Select value={role} onValueChange={setRole}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select></div>
+          <div><Label>{t('common.role')}</Label><Select value={role} onValueChange={setRole}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{availableRoles.map((r) => <SelectItem key={r} value={r}>{t(getRoleTranslationKey(r))}</SelectItem>)}</SelectContent></Select></div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
             <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{t('common.create')}</Button>
