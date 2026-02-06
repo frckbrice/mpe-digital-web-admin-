@@ -1,4 +1,4 @@
-# MPE Web Admin App
+# Satellite Project Admin Dashboard for managing third-party app.
 
 Administrative dashboard for the **MPE Web app** (main product). This app does not host its own backend: it shares the same Firebase project and talks to the MPE Web app API for all data and operations. Built for **ADMIN** and **MODERATOR** roles with role-based navigation and feature access.
 
