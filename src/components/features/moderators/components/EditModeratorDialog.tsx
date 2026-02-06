@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
@@ -17,35 +17,21 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { fetchModeratorDetail } from '../api/queries';
 import type { UpdateModeratorPayload } from '../api/mutations';
+import type { ModeratorRow } from '../api/types';
 
-interface EditModeratorDialogProps {
-  userId: string;
+interface EditModeratorFormProps {
+  initial: ModeratorRow;
   onClose: () => void;
   onSave: (d: UpdateModeratorPayload) => void;
   isPending: boolean;
 }
 
-export function EditModeratorDialog({ userId, onClose, onSave, isPending }: EditModeratorDialogProps) {
+function EditModeratorForm({ initial, onClose, onSave, isPending }: EditModeratorFormProps) {
   const { t } = useTranslation();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [isActive, setIsActive] = useState(true);
-
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['admin', 'users', 'detail', userId],
-    queryFn: () => fetchModeratorDetail(userId),
-    enabled: !!userId,
-  });
-
-  useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName);
-      setLastName(user.lastName);
-      setPhone(user.phone || '');
-      setIsActive(user.isActive);
-    }
-  }, [user]);
+  const [firstName, setFirstName] = useState(initial.firstName);
+  const [lastName, setLastName] = useState(initial.lastName);
+  const [phone, setPhone] = useState(initial.phone || '');
+  const [isActive, setIsActive] = useState(initial.isActive);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,19 +39,7 @@ export function EditModeratorDialog({ userId, onClose, onSave, isPending }: Edit
   };
 
   return (
-    <Dialog open={!!userId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('dashboard.moderators.editTitle')}</DialogTitle>
-          <DialogDescription>{user?.email}</DialogDescription>
-        </DialogHeader>
-        {isLoading && (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
-        {user && (
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>{t('common.firstName')}</Label>
@@ -91,14 +65,51 @@ export function EditModeratorDialog({ userId, onClose, onSave, isPending }: Edit
               <Label htmlFor="edit-moderator-active">{t('common.active')}</Label>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
+              <Button type="button" variant="outline" onClick={onClose}>
+                {t('common.cancel')}
+              </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('common.save')}
               </Button>
             </DialogFooter>
-          </form>
+    </form>
+  );
+}
+
+interface EditModeratorDialogProps {
+  userId: string;
+  onClose: () => void;
+  onSave: (d: UpdateModeratorPayload) => void;
+  isPending: boolean;
+}
+
+export function EditModeratorDialog({
+  userId,
+  onClose,
+  onSave,
+  isPending,
+}: EditModeratorDialogProps) {
+  const { t } = useTranslation();
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['admin', 'users', 'detail', userId],
+    queryFn: () => fetchModeratorDetail(userId),
+    enabled: !!userId,
+  });
+
+  return (
+    <Dialog open={!!userId} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('dashboard.moderators.editTitle')}</DialogTitle>
+          <DialogDescription>{user?.email}</DialogDescription>
+        </DialogHeader>
+        {isLoading && (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
         )}
+        {user && <EditModeratorForm key={user.id} initial={user} onClose={onClose} onSave={onSave} isPending={isPending} />}
       </DialogContent>
     </Dialog>
   );

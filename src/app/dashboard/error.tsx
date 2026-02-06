@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
-const isDev =
-  typeof process !== 'undefined' && process.env.NODE_ENV === 'development';
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV === 'development';
 
 export default function DashboardError({
   error,

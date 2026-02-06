@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -9,6 +10,7 @@ import { authLog, authError } from '@/lib/utils/auth-logger';
 import { loginWithEmail, loginWithGoogle, logoutUser } from './mutations';
 
 export function useLogin() {
+  const { t } = useTranslation();
   const setAuth = useAuthStore((s) => s.setAuth);
   const router = useRouter();
   const q = useQueryClient();
@@ -16,21 +18,32 @@ export function useLogin() {
   return useMutation({
     mutationFn: loginWithEmail,
     onSuccess: (data) => {
-      authLog('useLogin: success, setting auth and redirecting to /dashboard', { userId: data.user.id });
+      authLog('useLogin: success, setting auth and redirecting to /dashboard', {
+        userId: data.user.id,
+      });
       setAuth(data);
       q.invalidateQueries();
-      toast.success('Logged in');
+      toast.success(t('login.loggedIn'));
       router.push('/dashboard');
     },
     onError: (e) => {
       authError('useLogin: error', e);
-      const msg = e instanceof Error ? e.message : (e != null && typeof e === 'object' && 'message' in e && typeof (e as { message?: unknown }).message === 'string' ? (e as { message: string }).message : String(e ?? ''));
-      toast.error(msg);
+      const { message, translationKey } = getSafeErrorMessage(e, t('error.unexpectedError'));
+      let displayMsg: string;
+      if (message === 'Access denied. Admin or Moderator only.') {
+        displayMsg = t('login.errors.access_denied');
+      } else if (translationKey) {
+        displayMsg = t(translationKey);
+      } else {
+        displayMsg = message || t('error.unexpectedError');
+      }
+      toast.error(displayMsg);
     },
   });
 }
 
 export function useGoogleLogin() {
+  const { t } = useTranslation();
   const setAuth = useAuthStore((s) => s.setAuth);
   const router = useRouter();
   const q = useQueryClient();
@@ -41,17 +54,22 @@ export function useGoogleLogin() {
       authLog('useGoogleLogin: success, setting auth and redirecting', { userId: data.user.id });
       setAuth(data);
       q.invalidateQueries();
-      toast.success('Logged in');
+      toast.success(t('login.loggedIn'));
       router.push('/dashboard');
     },
     onError: (e) => {
       authError('useGoogleLogin: error', e);
-      toast.error(getSafeErrorMessage(e, 'Google login failed').message);
+      const { message, translationKey } = getSafeErrorMessage(
+        e,
+        t('login.errors.google_sign_in_failed')
+      );
+      toast.error(translationKey ? t(translationKey) : message);
     },
   });
 }
 
 export function useLogout() {
+  const { t } = useTranslation();
   const logout = useAuthStore((s) => s.logout);
   const router = useRouter();
   const q = useQueryClient();
@@ -63,7 +81,7 @@ export function useLogout() {
       logout();
       q.clear();
       router.push('/login');
-      toast.success('Logged out');
+      toast.success(t('login.loggedOut'));
     },
     onError: (e) => {
       authError('useLogout: error (still clearing and redirecting)', e);

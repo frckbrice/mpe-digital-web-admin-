@@ -5,20 +5,20 @@ export const dynamic = 'force-dynamic';
 
 /**
  * API Route: Messages Proxy
- * 
+ *
  * This route acts as a proxy for all message-related API endpoints, forwarding requests
  * to the MPE Web app backend. It handles GET, POST, PATCH, and DELETE operations.
- * 
+ *
  * Route pattern: /api/messages/[...path]
  * - Supports dynamic path segments (e.g., /api/messages/123, /api/messages/123/replies)
  * - Preserves query parameters and request body
  * - Forwards authorization headers for authenticated requests
- * 
+ *
  * Purpose:
  * - Avoids CORS issues when MPE Web app runs on a different port/domain
  * - Provides a unified API interface for the admin app
  * - Handles errors gracefully when backend is unreachable
- * 
+ *
  * Error responses:
  * - 500: API base URL not configured (check NEXT_PUBLIC_LOCAL_APP_URL or NEXT_PUBLIC_APP_URL)
  * - 503: MPE Web app is unreachable (check if backend is running)
@@ -67,12 +67,24 @@ async function proxy(req: NextRequest, path: string[] | undefined): Promise<Next
   }
 
   try {
-    const res = await fetch(url, { method: req.method, headers, body: body && body.byteLength > 0 ? body : undefined });
+    const res = await fetch(url, {
+      method: req.method,
+      headers,
+      body: body && body.byteLength > 0 ? body : undefined,
+    });
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
-    return NextResponse.json({ success: false, error: 'MPE_WEB_UNREACHABLE', message: `Cannot reach MPE Web at ${base}.`, detail: msg }, { status: 503 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'MPE_WEB_UNREACHABLE',
+        message: `Cannot reach MPE Web at ${base}.`,
+        detail: msg,
+      },
+      { status: 503 }
+    );
   }
 }
 
@@ -99,7 +111,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pat
  * Updates existing messages or message properties
  * Example: PATCH /api/messages/123 -> PATCH {base}/api/messages/123
  */
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ path?: string[] }> }
+) {
   return proxy(req, (await params).path);
 }
 
@@ -108,6 +123,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ pa
  * Deletes messages or message-related resources
  * Example: DELETE /api/messages/123 -> DELETE {base}/api/messages/123
  */
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ path?: string[] }> }
+) {
   return proxy(req, (await params).path);
 }

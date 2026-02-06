@@ -4,7 +4,12 @@
 
 import type { ModeratorRow, ModeratorsRes } from './types';
 
-export async function fetchModerators(params: { search?: string; isActive?: string; page?: number; pageSize?: number }): Promise<ModeratorsRes> {
+export async function fetchModerators(params: {
+  search?: string;
+  isActive?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<ModeratorsRes> {
   const { apiFetch } = await import('@/lib/api-client');
   const sp = new URLSearchParams();
   if (params.search) sp.set('search', params.search);
