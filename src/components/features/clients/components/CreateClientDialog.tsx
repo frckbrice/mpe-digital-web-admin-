@@ -2,7 +2,14 @@
 
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +24,12 @@ interface CreateClientDialogProps {
   isPending: boolean;
 }
 
-export function CreateClientDialog({ open, onOpenChange, onSubmit, isPending }: CreateClientDialogProps) {
+export function CreateClientDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  isPending,
+}: CreateClientDialogProps) {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -30,7 +42,12 @@ export function CreateClientDialog({ open, onOpenChange, onSubmit, isPending }: 
       toast.error(t('common.requiredFields'));
       return;
     }
-    onSubmit({ email: email.trim(), firstName: firstName.trim(), lastName: lastName.trim(), phone: phone.trim() || undefined });
+    onSubmit({
+      email: email.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone.trim() || undefined,
+    });
   };
 
   return (
@@ -43,16 +60,36 @@ export function CreateClientDialog({ open, onOpenChange, onSubmit, isPending }: 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>{t('common.email')} *</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@example.com" required />
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('common.emailPlaceholder')}
+              required
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>{t('common.firstName')} *</Label><Input value={firstName} onChange={(e) => setFirstName(e.target.value)} required /></div>
-            <div><Label>{t('common.lastName')} *</Label><Input value={lastName} onChange={(e) => setLastName(e.target.value)} required /></div>
+            <div>
+              <Label>{t('common.firstName')} *</Label>
+              <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+            </div>
+            <div>
+              <Label>{t('common.lastName')} *</Label>
+              <Input value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+            </div>
           </div>
-          <div><Label>{t('common.phone')}</Label><Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+          <div>
+            <Label>{t('common.phone')}</Label>
+            <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
-            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{t('common.create')}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t('common.create')}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

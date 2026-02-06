@@ -1,0 +1,1 @@
+export { PaymentsPageClient } from './PaymentsPageClient';

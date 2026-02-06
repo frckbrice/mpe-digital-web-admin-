@@ -13,7 +13,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (!base) {
     throw new Error(
       'API base URL is not set. In development set NEXT_PUBLIC_LOCAL_APP_URL (e.g. http://localhost:3000). ' +
-      'In production set NEXT_PUBLIC_APP_URL. Ensure the MPE Web app is running at that URL.'
+        'In production set NEXT_PUBLIC_APP_URL. Ensure the MPE Web app is running at that URL.'
     );
   }
   // In the browser, /api/auth/* and /api/admin/*, ... go through same-origin proxy to avoid CORS.
@@ -24,7 +24,9 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   const useProxy =
     typeof window !== 'undefined' &&
     (/^\/api\/auth\/(me|logout|google|profile)$/.test(p) ||
-      /^\/api\/(admin|agent|documents|messages|quote-requests|notifications)(\/|$)/.test(p));
+      /^\/api\/(admin|agent|documents|messages|quote-requests|notifications|moderation|payments|contracts|invoices|projects)(\/|$)/.test(
+        p
+      ));
   const url = useProxy ? p : `${base}${p}`;
 
   const isAuthPath = path.includes('/auth');
@@ -40,7 +42,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
           authWarn('apiFetch: direct getIdToken fallback failed', e);
         }
       }
-      console.log('apiFetch: token', token);
+
       if (isAuthPath) authLog('apiFetch: token', { path, hasToken: !!token });
     } catch (e) {
       console.log('apiFetch: failed to get auth token', e);
@@ -59,9 +61,13 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   // is kept when getValidIdToken failed, so /api/auth/me does not get 401 for missing header.
   if (options.headers) {
     if (options.headers instanceof Headers) {
-      options.headers.forEach((v, k) => { headers[k] = v; });
+      options.headers.forEach((v, k) => {
+        headers[k] = v;
+      });
     } else if (Array.isArray(options.headers)) {
-      options.headers.forEach(([k, v]) => { headers[k] = v; });
+      options.headers.forEach(([k, v]) => {
+        headers[k] = v;
+      });
     } else {
       Object.assign(headers, options.headers);
     }
@@ -71,7 +77,6 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (!headers['Authorization'] && token) headers['Authorization'] = `Bearer ${token}`;
 
   try {
-    console.log('apiFetch: fetching', url);
     return await fetch(url, { ...options, headers });
   } catch (e) {
     console.log('apiFetch: failed to fetch', e);

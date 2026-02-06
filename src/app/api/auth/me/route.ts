@@ -23,7 +23,11 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json(
-      { success: false, message: 'Authorization header missing or invalid.', code: 'AUTH_HEADER_MISSING' },
+      {
+        success: false,
+        message: 'Authorization header missing or invalid.',
+        code: 'AUTH_HEADER_MISSING',
+      },
       { status: 401 }
     );
   }
@@ -38,10 +42,7 @@ export async function GET(req: NextRequest) {
 
   const base = getMpeWebAppBaseUrl();
   if (!base) {
-    return NextResponse.json(
-      { error: 'API base URL not set.', status: 500 },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'API base URL not set.', status: 500 }, { status: 500 });
   }
 
   const headers: Record<string, string> = {
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
     'Content-Type': 'application/json',
     'X-Forwarded-From': 'admin-app',
     'X-Admin-Proxy': 'true',
-    origin: base
+    origin: base,
   };
 
   try {
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
       console.log('api/auth/me: data', data);
     } else {
       const text = await res.text();
-      console.warn('Non-JSON response from upstream:', text.substring(0, 200));
+      console.warn('Non-JSON response from upstream:', text.substring(0, 500));
       data.message = `Upstream returned non-JSON content.`;
     }
 

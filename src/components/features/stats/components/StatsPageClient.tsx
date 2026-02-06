@@ -1,5 +1,34 @@
 'use client';
 
+/**
+ * Component: StatsPageClient
+ *
+ * Detailed statistics page component that displays comprehensive metrics and analytics
+ * for administrators. Provides more detailed statistics than the dashboard home page.
+ *
+ * Features:
+ * - Displays detailed statistics (users by role, quotes, messages, documents)
+ * - Shows quote status breakdown with visual indicators
+ * - Shows user role breakdown
+ * - Auto-refreshes statistics every 60 seconds
+ * - Loading and error states
+ * - Internationalization support
+ * - Redirects to dashboard if user is not authenticated
+ *
+ * Data Flow:
+ * - Fetches statistics from /api/admin/stats endpoint
+ * - Uses React Query with automatic refetch interval
+ * - Displays data in stat cards and detailed breakdown sections
+ *
+ * Statistics Displayed:
+ * - Users by role (ADMIN, MODERATOR, AGENT, CLIENT)
+ * - Active vs inactive users
+ * - Total quotes with status breakdown
+ * - Total messages
+ * - Total documents
+ * - Quote status distribution
+ */
+
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,14 +48,60 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { fetchStats } from '../api/queries';
+import { useAuthStore } from '@/components/features/auth';
 
+/**
+ * Maps quote status to its translation key for i18n
+ * @param status - Quote status string
+ * @returns Translation key for the status
+ */
+function getStatusTranslationKey(status: string): string {
+  const statusMap: Record<string, string> = {
+    SUBMITTED: 'dashboard.quotes.statusSubmitted',
+    UNDER_REVIEW: 'dashboard.quotes.statusUnderReview',
+    QUOTE_PREPARED: 'dashboard.quotes.statusQuotePrepared',
+    QUOTE_SENT: 'dashboard.quotes.statusQuoteSent',
+    CLIENT_REVIEWING: 'dashboard.quotes.statusClientReviewing',
+    ACCEPTED: 'dashboard.quotes.statusAccepted',
+    REJECTED: 'dashboard.quotes.statusRejected',
+    IN_PROGRESS: 'dashboard.quotes.statusInProgress',
+    COMPLETED: 'dashboard.quotes.statusCompleted',
+    CANCELLED: 'dashboard.quotes.statusCancelled',
+  };
+  return statusMap[status] || status;
+}
+
+/**
+ * Stats Page Component
+ *
+ * Renders a detailed statistics page with comprehensive metrics and analytics.
+ * Automatically refreshes data every 60 seconds to keep statistics up-to-date.
+ * Redirects to dashboard if user is not authenticated.
+ */
 export function StatsPageClient() {
   const { t } = useTranslation();
-  const { data: stats, isLoading, error } = useQuery({
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === 'ADMIN';
+
+  const {
+    data: stats,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['admin', 'stats'],
     queryFn: fetchStats,
     refetchInterval: 60_000,
+    enabled: isAdmin,
   });
+
+  // Admin-only endpoint (/api/admin/stats). Moderators should not see stats.
+  if (user?.role && !isAdmin) {
+    return (
+      <div className="rounded-lg border border-border bg-muted/30 p-4">
+        <p className="text-sm font-medium">{t('dashboard.stats.accessRestricted')}</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -54,40 +129,99 @@ export function StatsPageClient() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><Users className="h-5 w-5" />{t('dashboard.stats.users')}</h2>
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          {t('dashboard.stats.users')}
+        </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <StatCard title={t('dashboard.stats.total')} value={users.total} sub={`${users.newLast30Days} ${t('dashboard.stats.new30d')}`} icon={Users} />
+          <StatCard
+            title={t('dashboard.stats.total')}
+            value={users.total}
+            sub={`${users.newLast30Days} ${t('dashboard.stats.new30d')}`}
+            icon={Users}
+          />
           <StatCard title={t('dashboard.home.clients')} value={users.clients} icon={UserCheck} />
           <StatCard title={t('dashboard.home.agents')} value={users.agents} icon={UserCog} />
           <StatCard title={t('dashboard.home.admins')} value={users.admins} icon={Shield} />
           <StatCard title={t('dashboard.stats.active')} value={users.active} icon={TrendingUp} />
-          <StatCard title={t('dashboard.stats.new30d')} value={users.newLast30Days} icon={TrendingUp} />
+          <StatCard
+            title={t('dashboard.stats.new30d')}
+            value={users.newLast30Days}
+            icon={TrendingUp}
+          />
         </div>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FileText className="h-5 w-5" />{t('dashboard.stats.quoteRequests')}</h2>
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          {t('dashboard.stats.quoteRequests')}
+        </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <StatCard title={t('dashboard.stats.total')} value={quotes.total} sub={`${quotes.newLast30Days} ${t('dashboard.stats.new30d')}`} icon={FileText} />
-          <StatCard title={t('dashboard.home.pending')} value={quotes.pending} sub={t('dashboard.stats.submitted')} icon={Clock} />
-          <StatCard title={t('dashboard.stats.inProgress')} value={quotes.inProgress} icon={ArrowRight} />
-          <StatCard title={t('dashboard.stats.completed')} value={quotes.completed} icon={CheckCircle} />
-          <StatCard title={t('dashboard.stats.new30d')} value={quotes.newLast30Days} icon={TrendingUp} />
+          <StatCard
+            title={t('dashboard.stats.total')}
+            value={quotes.total}
+            sub={`${quotes.newLast30Days} ${t('dashboard.stats.new30d')}`}
+            icon={FileText}
+          />
+          <StatCard
+            title={t('dashboard.home.pending')}
+            value={quotes.pending}
+            sub={t('dashboard.stats.submitted')}
+            icon={Clock}
+          />
+          <StatCard
+            title={t('dashboard.stats.inProgress')}
+            value={quotes.inProgress}
+            icon={ArrowRight}
+          />
+          <StatCard
+            title={t('dashboard.stats.completed')}
+            value={quotes.completed}
+            icon={CheckCircle}
+          />
+          <StatCard
+            title={t('dashboard.stats.new30d')}
+            value={quotes.newLast30Days}
+            icon={TrendingUp}
+          />
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><MessageSquare className="h-5 w-5" />{t('dashboard.stats.messages')}</h2>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            {t('dashboard.stats.messages')}
+          </h2>
           <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard title={t('dashboard.stats.total')} value={messages.total} icon={MessageSquare} />
-            <StatCard title={t('dashboard.home.unread')} value={messages.unread} icon={MessageSquare} />
-            <StatCard title={t('dashboard.stats.new30d')} value={messages.newLast30Days} icon={TrendingUp} />
+            <StatCard
+              title={t('dashboard.stats.total')}
+              value={messages.total}
+              icon={MessageSquare}
+            />
+            <StatCard
+              title={t('dashboard.home.unread')}
+              value={messages.unread}
+              icon={MessageSquare}
+            />
+            <StatCard
+              title={t('dashboard.stats.new30d')}
+              value={messages.newLast30Days}
+              icon={TrendingUp}
+            />
           </div>
         </div>
         <div>
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FolderOpen className="h-5 w-5" />{t('dashboard.stats.documents')}</h2>
-          <StatCard title={t('dashboard.stats.totalDocuments')} value={documents.total} icon={FolderOpen} />
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <FolderOpen className="h-5 w-5" />
+            {t('dashboard.stats.documents')}
+          </h2>
+          <StatCard
+            title={t('dashboard.stats.totalDocuments')}
+            value={documents.total}
+            icon={FolderOpen}
+          />
         </div>
       </div>
 
@@ -114,9 +248,13 @@ export function StatsPageClient() {
                   {recentQuotes.map((q) => (
                     <tr key={q.id} className="border-b border-border last:border-0">
                       <td className="py-2 font-mono text-muted-foreground">{q.referenceNumber}</td>
-                      <td className="py-2">{q.client ? `${q.client.firstName} ${q.client.lastName}` : '—'}</td>
-                      <td className="py-2 capitalize">{q.status.toLowerCase().replace('_', ' ')}</td>
-                      <td className="py-2 text-muted-foreground">{q.submissionDate ? new Date(q.submissionDate).toLocaleDateString() : '—'}</td>
+                      <td className="py-2">
+                        {q.client ? `${q.client.firstName} ${q.client.lastName}` : '—'}
+                      </td>
+                      <td className="py-2">{t(getStatusTranslationKey(q.status))}</td>
+                      <td className="py-2 text-muted-foreground">
+                        {q.submissionDate ? new Date(q.submissionDate).toLocaleDateString() : '—'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

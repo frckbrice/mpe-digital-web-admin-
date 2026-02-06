@@ -2,6 +2,15 @@
  * Quotes feature - shared types
  */
 
+/** Attachment metadata for message/email (after upload). */
+export interface MessageAttachment {
+  url: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadedAt?: string;
+}
+
 export interface QuoteRow {
   id: string;
   referenceNumber: string;
@@ -20,7 +29,14 @@ export interface QuoteRow {
 export interface QuotesRes {
   success: boolean;
   data: QuoteRow[];
-  pagination: { page: number; pageSize: number; totalCount: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean };
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export interface AgentsRes {
@@ -65,7 +81,35 @@ export interface QuoteDetail {
   budgetAmount: string | null;
   client: { id: string; firstName: string; lastName: string; email: string; phone: string | null };
   assignedAgent: { id: string; firstName: string; lastName: string; email: string } | null;
-  documents: { id: string; fileName: string; originalName: string; documentType: string; status: string; uploadDate: string; uploadedBy?: { firstName: string; lastName: string } }[];
-  messages: { id: string; subject: string | null; content: string; sentAt: string; readAt?: string | null; sender: { id?: string; firstName: string; lastName: string; email: string }; recipient: { id?: string; firstName: string; lastName: string; email: string } }[];
-  statusHistory: { id: string; status: string; notes: string | null; timestamp: string; changedBy: string }[];
+  documents: {
+    id: string;
+    fileName: string;
+    originalName: string;
+    documentType: string;
+    status: string;
+    uploadDate: string;
+    uploadedBy?: { firstName: string; lastName: string };
+  }[];
+  messages: {
+    id: string;
+    subject: string | null;
+    content: string;
+    sentAt: string;
+    readAt?: string | null;
+    sender: { id?: string; firstName: string; lastName: string; email: string };
+    recipient: { id?: string; firstName: string; lastName: string; email: string };
+  }[];
+  statusHistory?: {
+    id: string;
+    status: string;
+    notes: string | null;
+    timestamp: string;
+    changedBy: string;
+  }[];
+}
+
+/** Result of GET /api/admin/quotes/[id] — quote data plus ETag for If-Match on validate/reject. */
+export interface QuoteDetailResult {
+  quote: QuoteDetail;
+  etag: string | null;
 }

@@ -3,12 +3,41 @@ import { getMpeWebAppBaseUrl } from '@/lib/mpe-web-url';
 
 export const dynamic = 'force-dynamic';
 
-/** Proxies POST /api/auth/logout to the MPE Web app. */
+/**
+ * API Route: /api/auth/logout
+ *
+ * Proxies POST requests to the MPE Web app's logout endpoint. This proxy pattern avoids
+ * CORS issues when the MPE Web app runs on a different port or domain than the admin app.
+ *
+ * Purpose:
+ * - Handles user logout operations
+ * - Invalidates authentication tokens on the backend
+ * - Clears session data
+ *
+ * Architecture:
+ * - The admin app acts as a proxy layer between the frontend and the MPE Web backend
+ * - Logout is handled entirely by the MPE Web app to ensure proper token invalidation
+ * - This route simply forwards the request to avoid CORS issues
+ *
+ * Request:
+ * - Requires Authorization header with valid authentication token
+ *
+ * Response:
+ * - On success: Returns success confirmation
+ * - On error: Returns error details from MPE Web app
+ *
+ * Error Handling:
+ * - Returns 500 if API base URL is not configured
+ * - Returns 503 if MPE Web app is unreachable
+ * - Returns error status from MPE Web app if logout fails
+ */
 export async function POST(req: NextRequest) {
   const base = getMpeWebAppBaseUrl();
   if (!base) {
     return NextResponse.json(
-      { error: 'API base URL not set. Set NEXT_PUBLIC_LOCAL_APP_URL (e.g. http://localhost:3000).' },
+      {
+        error: 'API base URL not set. Set NEXT_PUBLIC_LOCAL_APP_URL (e.g. http://localhost:3000).',
+      },
       { status: 500 }
     );
   }

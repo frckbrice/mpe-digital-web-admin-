@@ -28,36 +28,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const cleanupToken = setupTokenRefresh();
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      authLog('onAuthStateChanged', { hasUser: !!fbUser, uid: fbUser?.uid, email: fbUser?.email });
-      if (fbUser) {
-        try {
-          const { getValidIdToken } = await import('@/lib/utils/token-refresh');
-          let token = await getValidIdToken(false);
-          // Fallback: if getValidIdToken returns null but user exists, try direct getIdToken
-          if (!token) {
-            authLog('AuthProvider: getValidIdToken returned null, trying direct getIdToken');
-            try {
-              token = await fbUser.getIdToken();
-            } catch (e) {
-              authWarn('AuthProvider: direct getIdToken failed', e);
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (fbUser) => {
+        authLog('onAuthStateChanged', {
+          hasUser: !!fbUser,
+          uid: fbUser?.uid,
+          email: fbUser?.email,
+        });
+        if (fbUser) {
+          try {
+            const { getValidIdToken } = await import('@/lib/utils/token-refresh');
+            let token = await getValidIdToken(false);
+            // Fallback: if getValidIdToken returns null but user exists, try direct getIdToken
+            if (!token) {
+              authLog('AuthProvider: getValidIdToken returned null, trying direct getIdToken');
+              try {
+                token = await fbUser.getIdToken();
+              } catch (e) {
+                authWarn('AuthProvider: direct getIdToken failed', e);
+              }
             }
+            authLog('AuthProvider: got id token', { hasToken: !!token });
+            if (token) await syncAuthState(fbUser, token);
+            else await syncAuthState(null, '');
+          } catch (e) {
+            authError('AuthProvider: sync error', e);
+            await syncAuthState(null, '');
           }
-          authLog('AuthProvider: got id token', { hasToken: !!token });
-          if (token) await syncAuthState(fbUser, token);
-          else await syncAuthState(null, '');
-        } catch (e) {
-          authError('AuthProvider: sync error', e);
+        } else {
+          authLog('AuthProvider: no Firebase user, syncing to clear');
           await syncAuthState(null, '');
         }
-      } else {
-        authLog('AuthProvider: no Firebase user, syncing to clear');
-        await syncAuthState(null, '');
+      },
+      (e) => {
+        authError('AuthProvider: onAuthStateChanged error', e);
+        setLoading(false);
       }
-    }, (e) => {
-      authError('AuthProvider: onAuthStateChanged error', e);
-      setLoading(false);
-    });
+    );
 
     return () => {
       authLog('AuthProvider: cleanup (unsubscribe + token refresh)');

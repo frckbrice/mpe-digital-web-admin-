@@ -56,7 +56,12 @@ export function NotificationsDropdown() {
       }}
     >
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label={t('dashboard.layout.notifications')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-9 w-9"
+          aria-label={t('dashboard.layout.notifications')}
+        >
           <Bell className="h-5 w-5" />
           {count > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
@@ -65,7 +70,10 @@ export function NotificationsDropdown() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)] max-h-[min(400px,70vh)] overflow-hidden flex flex-col">
+      <DropdownMenuContent
+        align="end"
+        className="w-80 max-w-[calc(100vw-2rem)] max-h-[min(400px,70vh)] overflow-hidden flex flex-col"
+      >
         <div className="flex items-center justify-between px-3 py-2 border-b">
           <span className="font-medium text-sm">{t('dashboard.layout.notifications')}</span>
           {notifications.some((n) => !n.readAt) && (
@@ -76,7 +84,11 @@ export function NotificationsDropdown() {
               onClick={() => markAllMu.mutate()}
               disabled={markAllMu.isPending}
             >
-              {markAllMu.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCheck className="h-3 w-3 mr-1" />}
+              {markAllMu.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <CheckCheck className="h-3 w-3 mr-1" />
+              )}
               {t('dashboard.layout.markAllRead')}
             </Button>
           )}
@@ -88,7 +100,9 @@ export function NotificationsDropdown() {
             </div>
           )}
           {!isLoading && notifications.length === 0 && (
-            <p className="text-sm text-muted-foreground px-3 py-6 text-center">{t('dashboard.layout.noNotifications')}</p>
+            <p className="text-sm text-muted-foreground px-3 py-6 text-center">
+              {t('dashboard.layout.noNotifications')}
+            </p>
           )}
           {!isLoading && notifications.length > 0 && (
             <ul className="py-1">
@@ -99,8 +113,12 @@ export function NotificationsDropdown() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{n.title}</p>
-                    {n.body && <p className="text-xs text-muted-foreground line-clamp-2">{n.body}</p>}
-                    <p className="text-xs text-muted-foreground mt-0.5">{new Date(n.createdAt).toLocaleString()}</p>
+                    {n.body && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">{n.body}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </p>
                   </div>
                   {!n.readAt && (
                     <Button
