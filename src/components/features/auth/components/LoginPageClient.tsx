@@ -2,20 +2,20 @@
 
 /**
  * Component: LoginPageClient
- * 
+ *
  * Client-side wrapper for the login page that handles authentication state and redirects.
- * 
+ *
  * Features:
  * - Checks authentication status on mount
  * - Redirects authenticated ADMIN/MODERATOR users to dashboard
  * - Shows loading state while checking authentication
  * - Renders LoginForm for unauthenticated users
- * 
+ *
  * Authentication Flow:
  * - Uses authStore to check if user is authenticated
  * - Only ADMIN and MODERATOR roles can access the admin app
  * - Automatically redirects authenticated users to /dashboard
- * 
+ *
  * State Management:
  * - Uses authStore (Zustand) for global authentication state
  * - Monitors isLoading, isAuthenticated, and user.role
@@ -29,7 +29,7 @@ import { Loader2 } from 'lucide-react';
 
 /**
  * Login Page Client Component
- * 
+ *
  * Wrapper component that handles authentication state checks and redirects.
  * Only renders the login form if user is not authenticated or not an admin/moderator.
  */

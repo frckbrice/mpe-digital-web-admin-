@@ -1,0 +1,1 @@
+export { ModerationPageClient } from './ModerationPageClient';

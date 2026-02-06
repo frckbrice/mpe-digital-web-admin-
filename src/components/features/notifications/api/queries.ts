@@ -4,7 +4,10 @@
 
 import type { NotificationsRes } from './types';
 
-export async function fetchNotifications(params: { page?: number; pageSize?: number }): Promise<NotificationsRes> {
+export async function fetchNotifications(params: {
+  page?: number;
+  pageSize?: number;
+}): Promise<NotificationsRes> {
   const { apiFetch } = await import('@/lib/api-client');
   const sp = new URLSearchParams();
   if (params.page) sp.set('page', String(params.page));

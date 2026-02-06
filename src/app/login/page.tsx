@@ -3,7 +3,7 @@ import { LoginPageClient } from '@/components/features/auth/components/LoginPage
 
 export const metadata: Metadata = {
   title: 'Login',
-  description: 'Login to MPE Admin',
+  description: 'Login to DB Digital Agency',
 };
 
 export default function LoginPage() {

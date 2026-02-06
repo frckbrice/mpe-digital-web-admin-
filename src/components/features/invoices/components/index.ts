@@ -1,0 +1,1 @@
+export { InvoicesPageClient } from './InvoicesPageClient';

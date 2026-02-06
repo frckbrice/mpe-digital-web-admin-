@@ -18,7 +18,6 @@ const initializeFirebaseAdmin = () => {
     return;
   }
 
-
   // FIREBASE_PROJECT_ID + FIREBASE_PRIVATE_KEY + FIREBASE_CLIENT_EMAIL: for production (Vercel etc.)
   const hasIndividualVars =
     process.env.FIREBASE_PROJECT_ID &&
@@ -32,11 +31,10 @@ const initializeFirebaseAdmin = () => {
     return;
   }
 
-  console.log("[firebase admin ] hasIndividualVars", hasIndividualVars)
+  console.log('[firebase admin ] hasIndividualVars', hasIndividualVars);
 
   try {
     let initConfig;
-
 
     const missingVars: string[] = [];
     if (!process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID.trim() === '') {

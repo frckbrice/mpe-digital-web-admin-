@@ -1,9 +1,9 @@
 /**
  * Quotes Feature - Data Queries
- * 
+ *
  * This module contains all query functions for fetching quote-related data.
  * All functions use the apiFetch utility which handles authentication and error handling.
- * 
+ *
  * Query Functions:
  * - fetchQuotes: Fetches paginated list of quotes with filters (ADMIN endpoint)
  * - fetchAgentQuotes: Fetches quotes for agents/moderators (AGENT endpoint)
@@ -13,13 +13,13 @@
  * - fetchAgentsForDetail: Fetches agents for quote detail view
  */
 
-import type { QuotesRes, AgentsRes, ClientsRes, QuoteDetail } from './types';
+import type { QuotesRes, AgentsRes, ClientsRes, QuoteDetail, QuoteDetailResult } from './types';
 
 /**
  * Fetches a paginated list of quotes with optional filters
- * 
+ *
  * Endpoint: GET /api/admin/quotes
- * 
+ *
  * @param params - Query parameters for filtering and pagination
  * @param params.status - Optional quote status filter
  * @param params.assignedAgentId - Optional filter by assigned agent ID
@@ -75,12 +75,12 @@ export async function fetchAgentQuotes(params: {
 
 /**
  * Fetches active agents for use in quote assignment dropdowns
- * 
+ *
  * Endpoint: GET /api/admin/users?role=AGENT&isActive=true&pageSize=100
- * 
+ *
  * Used to populate agent selection dropdowns in quote management interfaces.
  * Only fetches active agents to ensure only valid assignments.
- * 
+ *
  * @returns Promise resolving to AgentsRes with list of active agents
  * @throws Error if the request fails or response is not successful
  */
@@ -104,42 +104,42 @@ export async function fetchClientsForQuotes(): Promise<ClientsRes> {
 
 /**
  * Fetches detailed information for a specific quote
- * 
- * Endpoint: GET /api/agent/quotes/{id}
- * 
- * Retrieves comprehensive quote details including:
- * - Quote metadata (status, priority, dates)
- * - Client information
- * - Assigned agent information
- * - Quote request details
- * - Related documents
- * - Message thread
- * 
+ *
+ * Endpoint: GET /api/admin/quotes/{id}
+ *
+ * Used by both ADMIN and MODERATOR so internal notes are included. Retrieves
+ * comprehensive quote details including: quote metadata (status, priority, dates),
+ * client and assigned agent, quote request details, related documents, message
+ * thread, and internalNotes.
+ *
  * @param id - Quote ID
- * @returns Promise resolving to QuoteDetail object
+ * @returns Promise resolving to { quote, etag }. Use etag as If-Match when calling PATCH validate/reject.
  * @throws Error if the request fails, response is not successful, or data is missing
  */
-export async function fetchQuoteDetail(id: string): Promise<QuoteDetail> {
+export async function fetchQuoteDetail(id: string): Promise<QuoteDetailResult> {
   const { apiFetch } = await import('@/lib/api-client');
-  const res = await apiFetch(`/api/agent/quotes/${id}`);
+  const res = await apiFetch(`/api/admin/quotes/${id}`);
   if (!res.ok) throw new Error('Failed to fetch quote');
   const j = await res.json();
   if (!j.success || !j.data) throw new Error(j.message || 'Failed to fetch quote');
-  return j.data;
+  const etag = res.headers.get('ETag') ?? null;
+  return { quote: j.data, etag };
 }
 
 /**
  * Fetches active agents for quote detail view (assignment dropdown)
- * 
+ *
  * Endpoint: GET /api/admin/users?role=AGENT&isActive=true&pageSize=100
- * 
+ *
  * Similar to fetchAgentsForQuotes but returns a simplified array format
  * suitable for dropdown components in quote detail dialogs.
- * 
+ *
  * @returns Promise resolving to array of agent objects with id, name, email, and active status
  * @throws Error if the request fails or response is not successful
  */
-export async function fetchAgentsForDetail(): Promise<{ id: string; firstName: string; lastName: string; email: string; isActive: boolean }[]> {
+export async function fetchAgentsForDetail(): Promise<
+  { id: string; firstName: string; lastName: string; email: string; isActive: boolean }[]
+> {
   const { apiFetch } = await import('@/lib/api-client');
   const res = await apiFetch('/api/admin/users?role=AGENT&isActive=true&pageSize=100');
   if (!res.ok) throw new Error('Failed to fetch agents');

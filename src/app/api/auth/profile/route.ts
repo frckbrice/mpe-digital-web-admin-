@@ -8,7 +8,9 @@ export async function PATCH(req: NextRequest) {
   const base = getMpeWebAppBaseUrl();
   if (!base) {
     return NextResponse.json(
-      { error: 'API base URL not set. Set NEXT_PUBLIC_LOCAL_APP_URL (e.g. http://localhost:3000).' },
+      {
+        error: 'API base URL not set. Set NEXT_PUBLIC_LOCAL_APP_URL (e.g. http://localhost:3000).',
+      },
       { status: 500 }
     );
   }

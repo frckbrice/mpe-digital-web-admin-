@@ -17,6 +17,12 @@ import {
   UserCog,
   User,
   Users,
+  ShieldCheck,
+  CreditCard,
+  ListChecks,
+  FileSignature,
+  Receipt,
+  FolderKanban,
   Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,23 +49,70 @@ const MPE_WEB_APP_URL = getMpeWebAppBaseUrl() || process.env.NEXT_PUBLIC_MPE_WEB
 
 const ADMIN_BADGE_CLASS = 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
 
+const MODERATOR_ALLOWED_HREFS = new Set([
+  '/dashboard',
+  '/dashboard/moderation',
+  '/dashboard/payments',
+  '/dashboard/audit',
+  '/dashboard/quotes',
+  '/dashboard/profile',
+]);
+
+const MODERATOR_BLOCKED_PREFIXES = [
+  '/dashboard/stats',
+  '/dashboard/moderators',
+  '/dashboard/users',
+  '/dashboard/agents',
+  '/dashboard/clients',
+  '/dashboard/contracts',
+  '/dashboard/invoices',
+  '/dashboard/projects',
+] as const;
+
 // Navigation items - some are admin-only (ADMIN_MODERATOR_ENDPOINTS)
 const getNavItems = (userRole?: string) => {
   const baseNav = [
     { href: '/dashboard', labelKey: 'dashboard.layout.navDashboard', icon: LayoutDashboard },
-    { href: '/dashboard/stats', labelKey: 'dashboard.layout.navStats', icon: BarChart2 },
+    {
+      href: '/dashboard/moderation',
+      labelKey: 'dashboard.layout.navModeration',
+      icon: ShieldCheck,
+    },
+    { href: '/dashboard/payments', labelKey: 'dashboard.layout.navPayments', icon: CreditCard },
+    { href: '/dashboard/audit', labelKey: 'dashboard.layout.navAudit', icon: ListChecks },
+    {
+      href: '/dashboard/contracts',
+      labelKey: 'dashboard.layout.navContracts',
+      icon: FileSignature,
+    },
+    { href: '/dashboard/invoices', labelKey: 'dashboard.layout.navInvoices', icon: Receipt },
+    { href: '/dashboard/projects', labelKey: 'dashboard.layout.navProjects', icon: FolderKanban },
     { href: '/dashboard/quotes', labelKey: 'dashboard.layout.navQuotes', icon: FileText },
     { href: '/dashboard/clients', labelKey: 'dashboard.layout.navClients', icon: User },
     { href: '/dashboard/agents', labelKey: 'dashboard.layout.navAgents', icon: UserCog },
     { href: '/dashboard/users', labelKey: 'dashboard.layout.navUsers', icon: Users },
     { href: '/dashboard/profile', labelKey: 'dashboard.layout.navProfile', icon: User },
   ];
-  // Moderators and admins have the same navigation access
-  let items = [...baseNav];
-  // Only admins can see moderators management
-  if (userRole === 'ADMIN') {
-    items.splice(5, 0, { href: '/dashboard/moderators', labelKey: 'dashboard.layout.navModerators', icon: UserCog });
+
+  // Moderator should only see the views needed for moderation/payment/audit/quotes flows.
+  if (userRole === 'MODERATOR') {
+    return baseNav.filter((i) => MODERATOR_ALLOWED_HREFS.has(i.href));
   }
+
+  // Admin sees everything (plus admin-only sections).
+  let items = [...baseNav];
+  items.splice(1, 0, {
+    href: '/dashboard/stats',
+    labelKey: 'dashboard.layout.navStats',
+    icon: BarChart2,
+  });
+  // insert moderators management after Users
+  const idx = items.findIndex((i) => i.href === '/dashboard/users');
+  items.splice(idx >= 0 ? idx + 1 : items.length, 0, {
+    href: '/dashboard/moderators',
+    labelKey: 'dashboard.layout.navModerators',
+    icon: UserCog,
+  });
   return items;
 };
 
@@ -75,7 +128,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const toggleLocale = () => {
     const newLocale: Locale = currentLocale === 'en' ? 'fr' : 'en';
-    i18n.changeLanguage(newLocale).catch(() => { });
+    i18n.changeLanguage(newLocale).catch(() => {});
     if (typeof window !== 'undefined') {
       document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; sameSite=lax`;
     }
@@ -89,7 +142,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (!isLoading && isAuthenticated && user?.role !== 'ADMIN' && user?.role !== 'MODERATOR') {
       router.replace('/login');
     }
-  }, [isLoading, isAuthenticated, user?.role, router]);
+
+    // Prevent moderators from landing on admin-only pages (direct URL, bookmarks, etc.).
+    if (!isLoading && isAuthenticated && user?.role === 'MODERATOR') {
+      const isBlocked = MODERATOR_BLOCKED_PREFIXES.some(
+        (p) => pathname === p || pathname.startsWith(`${p}/`)
+      );
+      if (isBlocked) {
+        router.replace('/dashboard/moderation');
+      }
+    }
+  }, [isLoading, isAuthenticated, user?.role, router, pathname]);
 
   if (isLoading || !isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'MODERATOR')) {
     return (
@@ -99,9 +162,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  const isModeratorBlockedRoute =
+    user?.role === 'MODERATOR' &&
+    MODERATOR_BLOCKED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
+  if (isModeratorBlockedRoute) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background dark:bg-[#091a24]">
+        <Loader2 className="h-12 w-12 animate-spin text-[#fe4438]" />
+      </div>
+    );
+  }
+
   const getInitials = () => {
     if (!user) return '?';
-    const fromName = `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
+    const fromName =
+      `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
     if (fromName) return fromName;
     return (user.email?.charAt(0) || '?').toUpperCase();
   };
@@ -131,7 +207,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   className="w-64 max-w-[85vw] bg-background dark:bg-[#091a24] border-r border-border overflow-hidden"
                 >
                   <SheetHeader>
-                    <SheetTitle className="text-left text-foreground">{t('dashboard.layout.navigation')}</SheetTitle>
+                    <SheetTitle className="text-left text-foreground">
+                      {t('dashboard.layout.navigation')}
+                    </SheetTitle>
                   </SheetHeader>
                   <nav className="mt-6 space-y-2 overflow-hidden">
                     {navItems.map(({ href, labelKey, icon: Icon }) => (
@@ -142,7 +220,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         className={cn(
                           'flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full min-w-0 max-w-full',
                           pathname === href
-                            ? 'text-primary-foreground bg-[#fe4438]'
+                            ? 'text-primary-foreground bg-primary'
                             : 'text-foreground/70 hover:bg-accent hover:text-foreground'
                         )}
                       >
@@ -172,7 +250,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </SheetContent>
               </Sheet>
 
-              <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0"
+              >
                 <div className="relative w-32 h-32 xl:w-36 xl:h-36 flex-shrink-0">
                   <Image
                     src="/images/logo-icon.png"
@@ -201,12 +282,32 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 title={theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
               >
                 {theme === 'dark' ? (
-                  <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  <svg
+                    className="w-5 h-5 text-yellow-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  <svg
+                    className="w-5 h-5 text-yellow-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                    />
                   </svg>
                 )}
               </button>
@@ -216,7 +317,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 className="relative px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white transition-colors border border-slate-600 dark:border-neutral-700 rounded-md hover:border-primary dark:hover:border-primary overflow-hidden flex-shrink-0 whitespace-nowrap"
               >
                 <div className="absolute inset-0 opacity-50">
-                  <FlagIcon locale={currentLocale === 'en' ? 'fr' : 'en'} className="w-full h-full" />
+                  <FlagIcon
+                    locale={currentLocale === 'en' ? 'fr' : 'en'}
+                    className="w-full h-full"
+                  />
                 </div>
                 <span className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] font-semibold">
                   {currentLocale === 'en' ? 'FR' : 'EN'}
@@ -232,7 +336,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   <Button variant="ghost" className="h-auto p-1">
                     <Avatar className="h-9 w-9">
                       {user?.profilePicture ? (
-                        <AvatarImage src={user.profilePicture} alt={`${user?.firstName} ${user?.lastName}`} />
+                        <AvatarImage
+                          src={user.profilePicture}
+                          alt={`${user?.firstName} ${user?.lastName}`}
+                        />
                       ) : null}
                       <AvatarFallback className="text-sm font-medium text-primary-foreground bg-primary border border-primary">
                         {getInitials()}
@@ -248,13 +355,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                       <Badge className={cn('w-fit mt-1', ADMIN_BADGE_CLASS)}>
-                        {user?.role === 'MODERATOR' ? t('dashboard.layout.moderator') : t('dashboard.layout.admin')}
+                        {user?.role === 'MODERATOR'
+                          ? t('dashboard.layout.moderator')
+                          : t('dashboard.layout.admin')}
                       </Badge>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <a href={MPE_WEB_APP_URL} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                    <a
+                      href={MPE_WEB_APP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center"
+                    >
                       <ExternalLink className="mr-2 h-4 w-4" />
                       {t('dashboard.layout.openMpeWeb')}
                     </a>
@@ -334,7 +448,7 @@ const NavLink = memo(function NavLink({
         'flex items-center justify-between space-x-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer',
         isActive
           ? 'text-primary-foreground bg-[#fe4438]'
-          : 'text-primary-foreground hover:bg-[#0763b6]/80 dark:hover:bg-[#10c455]/40 hover:text-slate-300 border border-white/20'
+          : 'text-primary-foreground hover:bg-[#0763b6]/80 dark:hover:bg-[#10c455]/40 hover:text-slate-300 border border-premium-gold'
       )}
     >
       <div className="flex items-center space-x-3">
