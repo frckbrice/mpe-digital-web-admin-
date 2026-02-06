@@ -4,7 +4,13 @@
 
 import type { UserRow, UsersRes } from './types';
 
-export async function fetchUsers(params: { role?: string; search?: string; isActive?: string; page?: number; pageSize?: number }): Promise<UsersRes> {
+export async function fetchUsers(params: {
+  role?: string;
+  search?: string;
+  isActive?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<UsersRes> {
   const { apiFetch } = await import('@/lib/api-client');
   const sp = new URLSearchParams();
   if (params.role) sp.set('role', params.role);

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Home',
-  description: 'MPE Admin',
+  description: 'DB Digital Agency',
 };
 
 export default function HomePage() {

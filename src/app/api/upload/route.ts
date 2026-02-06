@@ -40,7 +40,10 @@ export async function POST(req: NextRequest) {
 
   const name = typeof file === 'object' && 'name' in file ? String((file as File).name) : 'file';
   const size = typeof file === 'object' && 'size' in file ? Number((file as File).size) : 0;
-  const type = typeof file === 'object' && 'type' in file ? String((file as File).type) : 'application/octet-stream';
+  const type =
+    typeof file === 'object' && 'type' in file
+      ? String((file as File).type)
+      : 'application/octet-stream';
 
   let buffer: Buffer;
   try {
@@ -63,9 +66,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Upload failed';
-    return NextResponse.json(
-      { success: false, error: 'Upload failed', message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Upload failed', message }, { status: 500 });
   }
 }

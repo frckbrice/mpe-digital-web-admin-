@@ -2,18 +2,21 @@
  * API endpoints used by the MPE Web Admin app.
  * All requests go to the MPE Web app (base URL from getMpeWebAppBaseUrl).
  *
- * ## Admin-only (ADMIN role)
- * - /api/admin/quotes - list all quotes (MODERATOR uses /api/agent/quotes)
+ * ## Admin quote APIs (ADMIN + MODERATOR)
+ * - GET /api/admin/quotes - list quotes (ADMIN + MODERATOR; same data including internalNotes in detail)
+ * - GET /api/admin/quotes/[id] - quote detail with internalNotes (ADMIN + MODERATOR)
  * - /api/admin/quotes/[id]/assign - assign/unassign (ADMIN + MODERATOR)
  * - /api/admin/quotes/[id]/validate - validate/reject quote (ADMIN + MODERATOR)
+ *
+ * ## Admin-only (ADMIN role)
  * - /api/admin/users - list, create users
  * - /api/admin/users/[id] - get, update, deactivate user (MODERATOR: no deactivate)
  * - /api/admin/stats - dashboard stats (MODERATOR cannot access)
  * - /api/admin/settings - get/update admin settings
  *
  * ## Shared (ADMIN, MODERATOR, AGENT) – role-based logic on the server
- * - /api/agent/quotes - list quotes (MODERATOR/ADMIN: all; AGENT: assigned + unassigned)
- * - /api/agent/quotes/[id] - get quote detail, PATCH status/priority/internalNotes
+ * - /api/agent/quotes - list quotes (AGENT: assigned + unassigned)
+ * - /api/agent/quotes/[id] - PATCH status/priority/internalNotes (ADMIN, MODERATOR, AGENT)
  * - /api/agent/clients - list clients (for filters, e.g. clientId on quotes)
  *
  * ## Auth (shared)

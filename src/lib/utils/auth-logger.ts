@@ -3,8 +3,7 @@
  * All logs (authLog, authWarn, authError) run only in development.
  */
 
-const isDev =
-  typeof process !== 'undefined' && process.env.NODE_ENV === 'development';
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV === 'development';
 
 export function authLog(message: string, data?: Record<string, unknown>): void {
   if (isDev) {
@@ -23,7 +22,7 @@ export function authWarn(message: string, err?: unknown): void {
 }
 
 export function authError(message: string, err?: unknown): void {
-  const payload = err instanceof Error ? err.message : (err != null ? String(err) : '');
+  const payload = err instanceof Error ? err.message : err != null ? String(err) : '';
   if (isDev) {
     console.error('[Auth]', message, err ?? '');
   } else if (payload) {

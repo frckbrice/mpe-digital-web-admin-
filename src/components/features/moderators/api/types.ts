@@ -18,5 +18,12 @@ export interface ModeratorRow {
 export interface ModeratorsRes {
   success: boolean;
   data: ModeratorRow[];
-  pagination: { page: number; pageSize: number; totalCount: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean };
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
