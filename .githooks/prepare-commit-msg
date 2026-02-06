@@ -1,0 +1,7 @@
+#!/bin/sh
+# Remove Co-authored-by trailers from commit messages.
+# Runs on every commit (message, merge, squash, commit).
+msg_file="$1"
+[ -f "$msg_file" ] || exit 0
+tmp=$(mktemp) || exit 0
+grep -v '^Co-authored-by:' "$msg_file" > "$tmp" && mv "$tmp" "$msg_file"
