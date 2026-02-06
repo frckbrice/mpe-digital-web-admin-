@@ -7,9 +7,12 @@ Administrative dashboard for the **MPE Web app** (main product). This app does n
 ## Overview
 
 
-| **Purpose** | Admin and moderation portal for the MPE Web app (quotes, users, agents, clients, contracts, invoices, payments, projects, moderation, audit). |
+| Item          | Description |
+|---------------|-------------|
+| **Purpose**   | Admin and moderation portal for the MPE Web app (quotes, users, agents, clients, contracts, invoices, payments, projects, moderation, audit). |
 | **Relationship** | Satellite app: authenticates with the same Firebase project as the main app and proxies all API calls to it. The browser never calls the MPE Web app directly. |
-| **Port** | Runs on **3001** (MPE Web app typically on 3000). |
+| **Port**      | Runs on **3001** (MPE Web app typically on 3000). |
+
 
 ---
 
@@ -280,6 +283,7 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) runs on push/PR to `main` a
 Set repository secrets for real Firebase config if you want the build job to use production-like env.
 
 ---
+
 
 ## Summary 
 
