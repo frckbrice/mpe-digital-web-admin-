@@ -115,8 +115,7 @@ export async function uploadToCloudinary(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const msg =
-      data?.error?.message || data?.message || `Cloudinary upload failed (${res.status})`;
+    const msg = data?.error?.message || data?.message || `Cloudinary upload failed (${res.status})`;
     throw new Error(msg);
   }
 

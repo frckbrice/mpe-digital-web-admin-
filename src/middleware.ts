@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/.well-known')) {
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/.well-known')
+  ) {
     return NextResponse.next();
   }
   if (/\.(png|jpg|jpeg|gif|svg|ico|webp|avif|woff|woff2|ttf|eot|json|xml|txt)$/i.test(pathname)) {

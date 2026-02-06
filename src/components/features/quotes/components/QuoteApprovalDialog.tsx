@@ -3,39 +3,78 @@
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { validateQuote } from '../api/mutations';
+import type { QuoteDetailResult } from '../api/types';
 
 interface QuoteApprovalDialogProps {
   quoteId: string;
+  etag: string | null;
   currentStatus: string;
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function QuoteApprovalDialog({ quoteId, currentStatus, open, onClose, onSuccess }: QuoteApprovalDialogProps) {
+export function QuoteApprovalDialog({
+  quoteId,
+  etag,
+  currentStatus,
+  open,
+  onClose,
+  onSuccess,
+}: QuoteApprovalDialogProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [action, setAction] = useState<'VALIDATE' | 'REJECT' | null>(null);
   const [reason, setReason] = useState('');
 
   const validateQuoteMu = useMutation({
-    mutationFn: (body: { action: 'VALIDATE' | 'REJECT'; reason?: string }) => validateQuote(quoteId, body),
+    mutationFn: async (body: { action: 'VALIDATE' | 'REJECT'; reason?: string }) => {
+      let currentEtag = etag;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          await validateQuote(quoteId, body, currentEtag);
+          return;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          const is412 = message.includes('412') || message.includes('If-Match does not match');
+          if (is412 && attempt === 0) {
+            await queryClient.refetchQueries({ queryKey: ['admin', 'quotes', quoteId] });
+            const next = queryClient.getQueryData<QuoteDetailResult>(['admin', 'quotes', quoteId]);
+            currentEtag = next?.etag ?? null;
+            if (!currentEtag) throw err;
+            continue;
+          }
+          throw err;
+        }
+      }
+    },
     onSuccess: (_, vars) => {
       setAction(null);
       setReason('');
-      queryClient.invalidateQueries({ queryKey: ['agent', 'quotes', quoteId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'quotes', quoteId] });
       onSuccess();
-      toast.success(vars.action === 'VALIDATE' ? t('dashboard.quotes.quoteValidated') : t('dashboard.quotes.quoteRejected'));
+      toast.success(
+        vars.action === 'VALIDATE'
+          ? t('dashboard.quotes.quoteValidated')
+          : t('dashboard.quotes.quoteRejected')
+      );
       onClose();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e?.message || t('error.unexpectedError')),
   });
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -56,15 +95,15 @@ export function QuoteApprovalDialog({ quoteId, currentStatus, open, onClose, onS
             {action === 'VALIDATE'
               ? t('dashboard.quotes.validateQuoteTitle')
               : action === 'REJECT'
-              ? t('dashboard.quotes.rejectQuoteTitle')
-              : t('dashboard.quotes.approvalActions')}
+                ? t('dashboard.quotes.rejectQuoteTitle')
+                : t('dashboard.quotes.approvalActions')}
           </DialogTitle>
           <DialogDescription>
             {action === 'VALIDATE'
               ? t('dashboard.quotes.validateQuoteDescription')
               : action === 'REJECT'
-              ? t('dashboard.quotes.rejectQuoteDescription')
-              : t('dashboard.quotes.approvalActionsDescription')}
+                ? t('dashboard.quotes.rejectQuoteDescription')
+                : t('dashboard.quotes.approvalActionsDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -119,12 +158,22 @@ export function QuoteApprovalDialog({ quoteId, currentStatus, open, onClose, onS
         <DialogFooter>
           {action && (
             <>
-              <Button variant="outline" onClick={() => { setAction(null); setReason(''); }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAction(null);
+                  setReason('');
+                }}
+              >
                 {t('common.back')}
               </Button>
               <Button
                 variant={action === 'REJECT' ? 'destructive' : 'default'}
-                className={action === 'VALIDATE' ? 'bg-green-600 text-white hover:bg-green-700 hover:text-white' : ''}
+                className={
+                  action === 'VALIDATE'
+                    ? 'bg-green-600 text-white hover:bg-green-700 hover:text-white'
+                    : ''
+                }
                 onClick={() => {
                   if (action && (action === 'VALIDATE' || reason.trim())) {
                     validateQuoteMu.mutate({ action, reason: reason.trim() || undefined });
@@ -135,7 +184,9 @@ export function QuoteApprovalDialog({ quoteId, currentStatus, open, onClose, onS
                 disabled={validateQuoteMu.isPending || (action === 'REJECT' && !reason.trim())}
               >
                 {validateQuoteMu.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {action === 'VALIDATE' ? t('dashboard.quotes.validate') : t('dashboard.quotes.reject')}
+                {action === 'VALIDATE'
+                  ? t('dashboard.quotes.validate')
+                  : t('dashboard.quotes.reject')}
               </Button>
             </>
           )}

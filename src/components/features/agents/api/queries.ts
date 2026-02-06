@@ -4,7 +4,12 @@
 
 import type { AgentRow, AgentsRes } from './types';
 
-export async function fetchAgents(params: { search?: string; isActive?: string; page?: number; pageSize?: number }): Promise<AgentsRes> {
+export async function fetchAgents(params: {
+  search?: string;
+  isActive?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<AgentsRes> {
   const { apiFetch } = await import('@/lib/api-client');
   const sp = new URLSearchParams();
   if (params.search) sp.set('search', params.search);

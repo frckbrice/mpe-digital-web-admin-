@@ -58,9 +58,7 @@ export function DataTablePagination({
   return (
     <div className="flex flex-col gap-3 sm:flex-row items-center justify-between border-t border-border px-4 py-3">
       <div className="flex flex-col sm:flex-row items-center gap-2 text-sm text-muted-foreground">
-        <span>
-          {start}–{end} of {totalCount}
-        </span>
+        <span>{t('common.rangeOf', { start, end: end, total: totalCount })}</span>
         <div className="flex items-center gap-2">
           <span>{t('common.rowsPerPage')}</span>
           <Select
@@ -136,6 +134,8 @@ export function DataTable<TData>({
   pageSizeOptions,
 }: DataTableProps<TData>) {
   const { t } = useTranslation();
+  // TanStack Table returns unstable function refs; React Compiler skips memoizing this component
+  // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable API design
   const table = useReactTable({
     data,
     columns,
@@ -147,7 +147,10 @@ export function DataTable<TData>({
   });
 
   const canPreviousPage = pagination.pageIndex > 0;
-  const canNextPage = pageCount < 0 ? pagination.pageIndex < table.getPageCount() - 1 : pagination.pageIndex < pageCount - 1;
+  const canNextPage =
+    pageCount < 0
+      ? pagination.pageIndex < table.getPageCount() - 1
+      : pagination.pageIndex < pageCount - 1;
 
   return (
     <div className="space-y-0">
@@ -186,7 +189,10 @@ export function DataTable<TData>({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+              <TableCell
+                colSpan={columns.length}
+                className="h-24 text-center text-muted-foreground"
+              >
                 {emptyMessage ?? t('common.noResults')}
               </TableCell>
             </TableRow>

@@ -24,12 +24,18 @@ const initializeFirebaseClient = () => {
   authLog('Firebase: initializing');
 
   const missingVars: string[] = [];
-  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim()) missingVars.push('NEXT_PUBLIC_FIREBASE_API_KEY');
-  if (!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim()) missingVars.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
-  if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim()) missingVars.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
-  if (!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim()) missingVars.push('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET');
-  if (!process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?.trim()) missingVars.push('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID');
-  if (!process.env.NEXT_PUBLIC_FIREBASE_APP_ID?.trim()) missingVars.push('NEXT_PUBLIC_FIREBASE_APP_ID');
+  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim())
+    missingVars.push('NEXT_PUBLIC_FIREBASE_API_KEY');
+  if (!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim())
+    missingVars.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
+  if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim())
+    missingVars.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
+  if (!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim())
+    missingVars.push('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET');
+  if (!process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?.trim())
+    missingVars.push('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID');
+  if (!process.env.NEXT_PUBLIC_FIREBASE_APP_ID?.trim())
+    missingVars.push('NEXT_PUBLIC_FIREBASE_APP_ID');
 
   if (missingVars.length > 0) {
     const msg =
@@ -58,7 +64,9 @@ const initializeFirebaseClient = () => {
     }
     auth = getAuth(app);
     if (typeof window !== 'undefined' && auth) {
-      setPersistence(auth, browserLocalPersistence).catch((e) => authError('Firebase persistence failed', e));
+      setPersistence(auth, browserLocalPersistence).catch((e) =>
+        authError('Firebase persistence failed', e)
+      );
     }
     authLog('Firebase: initialized', { projectId: firebaseConfig.projectId });
   } catch (error) {
@@ -80,9 +88,12 @@ if (typeof window !== 'undefined') {
 }
 
 export function ensureFirebaseInitialized(): Auth {
-  if (typeof window === 'undefined') throw new Error('Firebase can only be initialized in the browser');
+  if (typeof window === 'undefined')
+    throw new Error('Firebase can only be initialized in the browser');
   if (initializationError) {
-    authLog('ensureFirebaseInitialized: previous init error', { message: initializationError.message });
+    authLog('ensureFirebaseInitialized: previous init error', {
+      message: initializationError.message,
+    });
     throw new Error(sanitizeFirebaseError(initializationError));
   }
   if (!auth) {

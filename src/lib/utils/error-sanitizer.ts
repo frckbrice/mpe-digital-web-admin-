@@ -39,19 +39,28 @@ export function sanitizeFirebaseError(error: unknown): string {
     const code = (error as { code?: string }).code;
     if (code && FIREBASE_ERROR_MESSAGES[code]) return FIREBASE_ERROR_MESSAGES[code];
     const message = error.message || '';
-    if (message.includes('at ') && message.includes('(')) return 'An error occurred while processing your request';
-    if (message.includes('/') && (message.includes('node_modules') || message.includes('src/'))) return 'An error occurred while processing your request';
-    if (message.toLowerCase().includes('internal') || message.toLowerCase().includes('stack') || message.toLowerCase().includes('trace')) return 'An internal error occurred. Please try again later';
+    if (message.includes('at ') && message.includes('('))
+      return 'An error occurred while processing your request';
+    if (message.includes('/') && (message.includes('node_modules') || message.includes('src/')))
+      return 'An error occurred while processing your request';
+    if (
+      message.toLowerCase().includes('internal') ||
+      message.toLowerCase().includes('stack') ||
+      message.toLowerCase().includes('trace')
+    )
+      return 'An internal error occurred. Please try again later';
     return message.length > 200 ? 'An error occurred while processing your request' : message;
   }
 
   if (typeof error === 'object' && error !== null) {
     const o = error as { code?: string; message?: string };
     if (o.code && FIREBASE_ERROR_MESSAGES[o.code]) return FIREBASE_ERROR_MESSAGES[o.code];
-    if (o.message && typeof o.message === 'string') return sanitizeFirebaseError(new Error(o.message));
+    if (o.message && typeof o.message === 'string')
+      return sanitizeFirebaseError(new Error(o.message));
   }
 
-  if (typeof error === 'string') return error.length > 200 ? 'An error occurred while processing your request' : error;
+  if (typeof error === 'string')
+    return error.length > 200 ? 'An error occurred while processing your request' : error;
   return 'An unexpected error occurred';
 }
 
@@ -60,26 +69,75 @@ export function sanitizeError(error: unknown, defaultMessage = 'An error occurre
   if (error instanceof Error) {
     const message = error.message || '';
     if (message.includes('at ') && message.includes('(')) return defaultMessage;
-    if (message.includes('/') && (message.includes('node_modules') || message.includes('src/') || message.includes('dist/') || message.includes('build/'))) return defaultMessage;
-    if (message.toLowerCase().includes('internal') || message.toLowerCase().includes('stack') || message.toLowerCase().includes('trace') || message.toLowerCase().includes('prisma') || message.toLowerCase().includes('database')) return defaultMessage;
+    if (
+      message.includes('/') &&
+      (message.includes('node_modules') ||
+        message.includes('src/') ||
+        message.includes('dist/') ||
+        message.includes('build/'))
+    )
+      return defaultMessage;
+    if (
+      message.toLowerCase().includes('internal') ||
+      message.toLowerCase().includes('stack') ||
+      message.toLowerCase().includes('trace') ||
+      message.toLowerCase().includes('prisma') ||
+      message.toLowerCase().includes('database')
+    )
+      return defaultMessage;
     if (message.includes('ECONNREFUSED') || message.includes('DATABASE_URL')) return defaultMessage;
     return message.length > 200 ? defaultMessage : message;
   }
   if (typeof error === 'object' && error !== null) {
     const o = error as { message?: string };
-    if (o.message && typeof o.message === 'string') return sanitizeError(new Error(o.message), defaultMessage);
+    if (o.message && typeof o.message === 'string')
+      return sanitizeError(new Error(o.message), defaultMessage);
   }
   if (typeof error === 'string') return error.length > 200 ? defaultMessage : error;
   return defaultMessage;
 }
 
+/** Translation key for known Firebase/auth errors (e.g. login.errors.auth_invalid_credential) */
+export const FIREBASE_ERROR_KEYS: Record<string, string> = {
+  'auth/email-already-exists': 'login.errors.auth_email_already_exists',
+  'auth/invalid-email': 'login.errors.auth_invalid_email',
+  'auth/user-not-found': 'login.errors.auth_user_not_found',
+  'auth/wrong-password': 'login.errors.auth_wrong_password',
+  'auth/weak-password': 'login.errors.auth_weak_password',
+  'auth/invalid-credential': 'login.errors.auth_invalid_credential',
+  'auth/invalid-verification-code': 'login.errors.auth_invalid_verification_code',
+  'auth/invalid-verification-id': 'login.errors.auth_invalid_verification_id',
+  'auth/code-expired': 'login.errors.auth_code_expired',
+  'auth/operation-not-allowed': 'login.errors.auth_operation_not_allowed',
+  'auth/too-many-requests': 'login.errors.auth_too_many_requests',
+  'auth/user-disabled': 'login.errors.auth_user_disabled',
+  'auth/user-token-expired': 'login.errors.auth_user_token_expired',
+  'auth/id-token-expired': 'login.errors.auth_id_token_expired',
+  'auth/argument-error': 'login.errors.auth_argument_error',
+  'auth/invalid-id-token': 'login.errors.auth_invalid_id_token',
+  'auth/session-cookie-expired': 'login.errors.auth_session_cookie_expired',
+  'auth/insufficient-permission': 'login.errors.auth_insufficient_permission',
+  'auth/internal-error': 'login.errors.auth_internal_error',
+  'auth/configuration-not-found': 'login.errors.auth_configuration_not_found',
+  'auth/popup-blocked': 'login.errors.auth_popup_blocked',
+  'auth/popup-closed-by-user': 'login.errors.auth_popup_closed_by_user',
+  'auth/cancelled-popup-request': 'login.errors.auth_cancelled_popup_request',
+  'auth/unauthorized-domain': 'login.errors.auth_unauthorized_domain',
+};
+
 export function getSafeErrorMessage(
   error: unknown,
   defaultMessage = 'An error occurred'
-): { message: string } {
-  const isFirebase = error && typeof error === 'object' && 'code' in error && String((error as { code?: string }).code || '').startsWith('auth/');
+): { message: string; translationKey?: string } {
+  const isFirebase =
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    String((error as { code?: string }).code || '').startsWith('auth/');
+  const code = error && typeof error === 'object' ? (error as { code?: string }).code : undefined;
+  const translationKey = typeof code === 'string' ? FIREBASE_ERROR_KEYS[code] : undefined;
   const message = isFirebase ? sanitizeFirebaseError(error) : sanitizeError(error, defaultMessage);
-  return { message };
+  return { message, translationKey };
 }
 
 /**
@@ -95,7 +153,8 @@ export function getApiErrorPayload(
   const e = obj.error;
   const d = obj.detail;
   if (typeof m === 'string' && m.trim()) return m;
-  if (typeof e === 'string' && e.trim()) return typeof d === 'string' && d.trim() ? `${e}: ${d}` : e;
+  if (typeof e === 'string' && e.trim())
+    return typeof d === 'string' && d.trim() ? `${e}: ${d}` : e;
   if (typeof d === 'string' && d.trim()) return d;
   return fallback;
 }

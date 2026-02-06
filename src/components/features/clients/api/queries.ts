@@ -5,7 +5,11 @@
 
 import type { ClientRow, ClientsRes } from './types';
 
-export async function fetchClients(params: { search?: string; page?: number; pageSize?: number }): Promise<ClientsRes> {
+export async function fetchClients(params: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<ClientsRes> {
   const { apiFetch } = await import('@/lib/api-client');
   const sp = new URLSearchParams();
   if (params.search) sp.set('search', params.search);

@@ -5,7 +5,17 @@
 export type UpdateProfilePayload = { firstName: string; lastName: string; phone: string | null };
 
 export interface ProfileUpdateResponse {
-  user?: { id: string; email: string; firstName: string; lastName: string; phone: string | null; role: string; isActive: boolean; isVerified: boolean; profilePicture?: string };
+  user?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    role: string;
+    isActive: boolean;
+    isVerified: boolean;
+    profilePicture?: string;
+  };
   message?: string;
 }
 

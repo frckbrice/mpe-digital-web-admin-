@@ -4,14 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { PaginationState } from '@tanstack/react-table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
-import { Search } from 'lucide-react';
+import { PageHeader, FilterCard, SearchWithButton, DataTableCard } from '@/components/shared';
 import { fetchClients } from '../api/queries';
-import type { ClientRow, ClientsRes } from '../api/types';
+import type { ClientRow } from '../api/types';
 
 /**
  * Clients page – read-only per admin-tasks.
@@ -95,53 +92,35 @@ export function ClientsPageClient() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t('dashboard.clients.title')}</h1>
-        <p className="text-muted-foreground">{t('dashboard.clients.subtitleReadOnly')}</p>
-      </div>
+      <PageHeader
+        title={t('dashboard.clients.title')}
+        subtitle={t('dashboard.clients.subtitleReadOnly')}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('common.filters')}</CardTitle>
-          <div className="flex flex-wrap gap-3 pt-2">
-            <div className="flex gap-2">
-              <Input
-                placeholder={t('dashboard.clients.searchPlaceholder')}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="w-56 sm:w-64"
-              />
-              <Button
-                variant="secondary"
-                size="icon"
-                onClick={handleSearch}
-                aria-label={t('common.search')}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+      <FilterCard title={t('common.filters')}>
+        <SearchWithButton
+          placeholder={t('dashboard.clients.searchPlaceholder')}
+          value={searchInput}
+          onChange={setSearchInput}
+          onSearch={handleSearch}
+          ariaLabel={t('common.search')}
+          inputClassName="sm:w-64"
+        />
+      </FilterCard>
 
-      <Card>
-        <CardContent className="p-0">
-          <DataTable<ClientRow>
-            columns={columns}
-            data={clients}
-            pageCount={pageCount}
-            pagination={pagination}
-            onPaginationChange={(updater) =>
-              setPagination((prev) => (typeof updater === 'function' ? updater(prev) : updater))
-            }
-            totalCount={totalCount}
-            isLoading={isLoading}
-            emptyMessage={t('dashboard.clients.noClientsFound')}
-            pageSizeOptions={[10, 20, 50, 100]}
-          />
-        </CardContent>
-      </Card>
+      <DataTableCard<ClientRow>
+        columns={columns}
+        data={clients}
+        pageCount={pageCount}
+        pagination={pagination}
+        onPaginationChange={(updater) =>
+          setPagination((prev) => (typeof updater === 'function' ? updater(prev) : updater))
+        }
+        totalCount={totalCount}
+        isLoading={isLoading}
+        emptyMessage={t('dashboard.clients.noClientsFound')}
+        pageSizeOptions={[10, 20, 50, 100]}
+      />
     </div>
   );
 }
